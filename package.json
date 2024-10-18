@@ -1,0 +1,28 @@
+{
+  "name": "vibecheque",
+  "version": "0.0.1",
+  "description": "a discord bot for indicating the tone of text messages",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/COS420-Fall24/VibeCheque.git"
+  },
+  "keywords": [
+    "discord-bot",
+    "gpt"
+  ],
+  "author": "Liam Hillery",
+  "license": "CC0-1.0",
+  "bugs": {
+    "url": "https://github.com/COS420-Fall24/VibeCheque/issues"
+  },
+  "homepage": "https://github.com/COS420-Fall24/VibeCheque#readme",
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.6.3"
+  }
+}
