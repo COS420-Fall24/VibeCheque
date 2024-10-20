@@ -1,5 +1,5 @@
-import launchBot from "./discordApp"
-import { command, updateCommands } from "./registerCommands"
+import launchBot from "./discordApp.js"
+import { command, updateCommands } from "./registerCommands.js"
 
 const commands: command[] = [
 	{
