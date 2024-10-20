@@ -1,5 +1,13 @@
 import launchBot from "./discordApp"
-import registerCommands from "./registerCommands"
+import { command, updateCommands } from "./registerCommands"
 
-await registerCommands();
+const commands: command[] = [
+	{
+			name: "ping",
+			description: 'test bot and return "pong"',
+			type: 1,
+	},
+];
+
+await updateCommands(commands);
 await launchBot();
