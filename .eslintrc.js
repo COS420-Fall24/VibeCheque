@@ -31,7 +31,7 @@ module.exports = {
         ecmaFeatures: {
             jsx: true,
         },
-        project: ["./eslint/tsconfig.json"],
+        project: ["./tsconfig.json"],
     },
     ignorePatterns: [".eslintrc.js", "jest.config.js"],
     rules: {
