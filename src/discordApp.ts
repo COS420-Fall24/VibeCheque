@@ -53,8 +53,24 @@ async function launchBot(): Promise<string> {
         if (message.mentions.has(client.user as ClientUser)) {
             // console.log("mentioned!");
             // message.react(reactions.heart);
-            var tone = await analyzeTone(message.content)
-            message.reply(tone)
+
+            // check if the message has a reference (a parent message aka if this message is a reply to another one)
+            // if so, and the message is just tagging the bot, analyze the parent message
+            // if not, analyze the sent message instead
+
+            var tone;
+            if (message.reference !== null){
+                var parentMessage = await message.fetchReference()
+                if (message.content === "@vibecheque"){
+                    tone = await analyzeTone(parentMessage.content);
+                }
+                else {
+                    tone = await analyzeTone(parentMessage.content);
+                }
+            } else {
+                tone = await analyzeTone(message.content);
+            }
+            message.reply(tone);
         }
     });
     
