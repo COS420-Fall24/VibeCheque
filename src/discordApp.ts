@@ -57,25 +57,37 @@ async function launchBot(): Promise<string> {
             // check if the message has a reference (a parent message aka if this message is a reply to another one)
             // if so, and the message is just tagging the bot, analyze the parent message
             // if not, analyze the sent message instead
-
             var tone;
+            var messageToReply;
             if (message.reference !== null){
                 var parentMessage = await message.fetchReference()
                 // if replied to the bot without tagging the bot, don't analyze 
                 if (parentMessage.author.id === client.user?.id && 
-                    !message.content.includes("<@" + client.user?.id + ">" )){ 
+                    !message.content.includes(`<@${client.user?.id}>`)){ 
                     return;
                 }
-                if (message.content === "<@" + client.user?.id + ">" ){
+                if (message.content === `<@${client.user?.id}>` ){
+                    messageToReply = parentMessage;
                     tone = await analyzeTone(parentMessage.content);
                 }
                 else {
+                    messageToReply = parentMessage;
                     tone = await analyzeTone(message.content);
                 }
             } else {
+                messageToReply = message;
                 tone = await analyzeTone(message.content);
             }
-            message.reply(tone);
+
+            if (tone.includes("detected")){
+                messageToReply.author.send(tone);
+            } else {
+                messageToReply.author.send(messageToReply.content + " - This message gives " + 
+                    tone.toLowerCase().split('').reduce((acc, char) => {
+                        return /[a-zA-Z]/.test(char) ? acc + char : acc;
+                    }, '') + " tone");
+            }
+            // message.reply(tone);
         }
     });
     
