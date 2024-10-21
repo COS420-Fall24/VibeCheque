@@ -65,7 +65,7 @@ async function launchBot(): Promise<string> {
                     tone = await analyzeTone(parentMessage.content);
                 }
                 else {
-                    tone = await analyzeTone(parentMessage.content);
+                    tone = await analyzeTone(message.content);
                 }
             } else {
                 tone = await analyzeTone(message.content);
