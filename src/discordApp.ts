@@ -1,4 +1,5 @@
 import "dotenv/config";
+import analyzeTone from "./gptRequests.js"
 import { Client, GatewayIntentBits, Interaction, CacheType, Events, ClientUser } from "discord.js";
 
 // define a bunch of emojis we'll use frequently here. either unicode character or just the id
@@ -49,10 +50,11 @@ async function launchBot(): Promise<string> {
         // arbitrary snowflake (ask me or look it up) e.g. `<@1295481669603688499>`
 
         // console.log(message.content);
-
         if (message.mentions.has(client.user as ClientUser)) {
             // console.log("mentioned!");
-            message.react(reactions.heart);
+            // message.react(reactions.heart);
+            var tone = await analyzeTone(message.content)
+            message.reply(tone)
         }
     });
     

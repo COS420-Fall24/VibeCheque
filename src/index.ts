@@ -7,6 +7,11 @@ const commands: command[] = [
 			description: 'test bot and return "pong"',
 			type: 1,
 	},
+	{
+		name: "tone",
+		description: 'analyze the tone of the text',
+		type: 1,
+},
 ];
 
 await updateCommands(commands);
