@@ -61,7 +61,12 @@ async function launchBot(): Promise<string> {
             var tone;
             if (message.reference !== null){
                 var parentMessage = await message.fetchReference()
-                if (message.content === "@vibecheque"){
+                // if replied to the bot without tagging the bot, don't analyze 
+                if (parentMessage.author.id === client.user?.id && 
+                    !message.content.includes("<@" + client.user?.id + ">" )){ 
+                    return;
+                }
+                if (message.content === "<@" + client.user?.id + ">" ){
                     tone = await analyzeTone(parentMessage.content);
                 }
                 else {
