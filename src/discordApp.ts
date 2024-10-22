@@ -1,18 +1,31 @@
 import "dotenv/config";
 import analyzeTone from "./gptRequests.js"
-import { Client, GatewayIntentBits, Interaction, CacheType, Events, ClientUser } from "discord.js";
+import { Client, GatewayIntentBits, ChatInputCommandInteraction, CacheType, Events, ClientUser, MessageContextMenuCommandInteraction } from "discord.js";
 
 // define a bunch of emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
     heart: "❤️"
 };
 
-async function ping(interaction: Interaction<CacheType>): Promise<void> {
+async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+    
     setTimeout(() => {
         if (interaction.isRepliable()) {
             interaction.reply(`pong!`);
         }
     }, 1000);
+}
+
+async function tone(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+
+    try {
+        interaction.editReply(await analyzeTone(interaction.targetMessage.content));
+    } catch (error) {
+        interaction.editReply("Something went wrong.");
+        console.error(error);
+    }
 }
 
 async function launchBot(): Promise<string> {
@@ -85,7 +98,8 @@ async function launchBot(): Promise<string> {
     client.on(Events.InteractionCreate, async (interaction) => {
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === "ping") await ping(interaction);
-        } else if (interaction.isMessageComponent()) {
+        } else if (interaction.isMessageContextMenuCommand()) {
+            if (interaction.commandName === "Tone") await tone(interaction);
         } else {
             console.log(interaction);
         }
