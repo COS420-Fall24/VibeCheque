@@ -5,7 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "npx tsc --outDir build && node build/index.js",
+    "start": "npm run build && node build/index.js",
+    "registerCommands": "npm run build && node build/registerCommands.js",
+    "build": "npx tsc --outDir build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
