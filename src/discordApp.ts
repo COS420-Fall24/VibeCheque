@@ -1,4 +1,5 @@
 import "dotenv/config";
+import analyzeTone from "./gptRequests.js"
 import { Client, GatewayIntentBits, Interaction, CacheType, Events, ClientUser } from "discord.js";
 
 // define a bunch of emojis we'll use frequently here. either unicode character or just the id
@@ -49,10 +50,32 @@ async function launchBot(): Promise<string> {
         // arbitrary snowflake (ask me or look it up) e.g. `<@1295481669603688499>`
 
         // console.log(message.content);
-
         if (message.mentions.has(client.user as ClientUser)) {
             // console.log("mentioned!");
-            message.react(reactions.heart);
+            // message.react(reactions.heart);
+
+            // check if the message has a reference (a parent message aka if this message is a reply to another one)
+            // if so, and the message is just tagging the bot, analyze the parent message
+            // if not, analyze the sent message instead
+
+            var tone;
+            if (message.reference !== null){
+                var parentMessage = await message.fetchReference()
+                // if replied to the bot without tagging the bot, don't analyze 
+                if (parentMessage.author.id === client.user?.id && 
+                    !message.content.includes("<@" + client.user?.id + ">" )){ 
+                    return;
+                }
+                if (message.content === "<@" + client.user?.id + ">" ){
+                    tone = await analyzeTone(parentMessage.content);
+                }
+                else {
+                    tone = await analyzeTone(message.content);
+                }
+            } else {
+                tone = await analyzeTone(message.content);
+            }
+            message.reply(tone);
         }
     });
     
