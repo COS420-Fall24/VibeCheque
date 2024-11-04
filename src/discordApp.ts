@@ -15,7 +15,7 @@ async function ping(interaction: Interaction<CacheType>): Promise<void> {
     }, 1000);
 }
 
-async function launchBot(): Promise<string> {
+async function launchBot(): Promise<Client> {
     // the client has to declare the features it uses up front so discord.js kno9ws if it can
     // ignore some fields and callbacks to save on hosting resources. here are some links to clarify:
     // discord.js: https://discordjs.guide/popular-topics/intents.html#error-disallowed-intents
@@ -49,7 +49,7 @@ async function launchBot(): Promise<string> {
         // any emojis will be in the discord format, and pings will show up as some
         // arbitrary snowflake (ask me or look it up) e.g. `<@1295481669603688499>`
 
-        // console.log(message.content);
+        console.log(message.content);
         if (message.mentions.has(client.user as ClientUser)) {
             // console.log("mentioned!");
             // message.react(reactions.heart);
@@ -92,7 +92,12 @@ async function launchBot(): Promise<string> {
     });
 
     // attempt to connect
-    return client.login(process.env.DISCORD_TOKEN);
+    return await client.login(process.env.DISCORD_TOKEN)
+    .then(
+        (response: string) => {
+            console.log(response);
+            return client;
+    });
 }
 
 export default launchBot;
