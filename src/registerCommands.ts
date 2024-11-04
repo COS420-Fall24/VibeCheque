@@ -1,9 +1,9 @@
 import "dotenv/config";
-import { REST, Routes } from "discord.js";
+import { REST, RequestData, Routes } from "discord.js";
 
-export declare type command = {
+declare type command = {
     name: string;
-    description: string;
+    description?: string;
     type: number;
 };
 
@@ -14,8 +14,7 @@ export declare type command = {
  * This function handles all of the required api calls to register the bot's commands.
  * @param commands An array of commands to be registered
  */
-export async function updateCommands(commands: command[]): Promise<void> {
-
+async function updateCommands(commands: command[]): Promise<void> {
     // discord.js handles api endpoints for us with the REST object
     const rest = new REST({ version: "10" }).setToken(
         process.env.DISCORD_TOKEN as string,
@@ -35,3 +34,15 @@ export async function updateCommands(commands: command[]): Promise<void> {
         console.error(error);
     }
 }
+
+updateCommands([
+    {
+        name: "ping",
+        description: 'test bot and return "pong"',
+        type: 1,
+    },
+    {
+        name: "Tone",
+        type: 3,
+    },
+]);
