@@ -35,10 +35,15 @@ async function updateCommands(commands: command[]): Promise<void> {
     }
 }
 
-updateCommands([
+await updateCommands([
     {
         name: "ping",
         description: 'test bot and return "pong"',
+        type: 1,
+    },
+    {
+        name: "embed",
+        description: "test embed feature of discord",
         type: 1,
     },
     {

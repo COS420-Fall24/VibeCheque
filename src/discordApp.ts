@@ -1,6 +1,15 @@
 import "dotenv/config";
 import analyzeTone from "./gptRequests.js"
-import { Client, GatewayIntentBits, ChatInputCommandInteraction, CacheType, Events, ClientUser, MessageContextMenuCommandInteraction } from "discord.js";
+import {
+    Client,
+    GatewayIntentBits,
+    ChatInputCommandInteraction,
+    CacheType,
+    Events,
+    ClientUser,
+    MessageContextMenuCommandInteraction,
+    EmbedBuilder
+} from "discord.js";
 
 // define a bunch of emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
@@ -12,9 +21,23 @@ async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promis
     
     setTimeout(() => {
         if (interaction.isRepliable()) {
-            interaction.reply(`pong!`);
+            interaction.editReply(`pong!`);
         }
     }, 1000);
+}
+
+async function embed(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+
+    const embed1 = new EmbedBuilder()
+        .setColor("#aa33aa")
+        .setTitle("Purple Embed");
+    
+    const embed2 = new EmbedBuilder()
+        .setColor("#33aa33")
+        .setTitle("green Embed");
+    
+    interaction.editReply({ embeds: [embed1, embed2] });
 }
 
 
@@ -99,6 +122,7 @@ async function launchBot(): Promise<Client> {
     client.on(Events.InteractionCreate, async (interaction) => {
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === "ping") await ping(interaction);
+            if (interaction.commandName === "embed") await embed(interaction);
         } else if (interaction.isMessageContextMenuCommand()) {
             if (interaction.commandName === "Tone") await tone(interaction);
         } else {
@@ -110,7 +134,6 @@ async function launchBot(): Promise<Client> {
     return await client.login(process.env.DISCORD_TOKEN)
     .then(
         (response: string) => {
-            console.log(response);
             return client;
     });
 }
