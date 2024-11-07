@@ -1,4 +1,8 @@
 import launchBot from "./discordApp.js"
 
-// might refactor this later
-await launchBot();
+async function main(){
+	// might refactor this later
+	await launchBot();
+}
+
+main();

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { REST, RequestData, Routes } from "discord.js";
+import { REST, Routes } from "discord.js";
 
 declare type command = {
     name: string;
@@ -31,11 +31,11 @@ async function updateCommands(commands: command[]): Promise<void> {
         console.log("reloaded commands");
     } catch (error) {
         console.log(`app id: ${process.env.APP_ID}`);
-        console.error(error);
+        throw error;
     }
 }
 
-await updateCommands([
+updateCommands([
     {
         name: "ping",
         description: 'test bot and return "pong"',
