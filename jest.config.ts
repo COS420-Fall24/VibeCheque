@@ -4,8 +4,9 @@ module.exports = {
     testEnvironment: "node",
     resetMocks: true,
     collectCoverageFrom: [
-        "src/**/*.{ts}",
+        "<rootDir>/src/**/*.{js,ts}",
         "!<rootDir>/node_modules/",
+        "!<rootDir>/src/testing/",
         "!<rootDir>/build/"
     ],
     coverageReporters: ["text", "lcov"],

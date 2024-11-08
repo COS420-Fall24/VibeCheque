@@ -18,7 +18,7 @@
         "outDir": "build"
     },
     "include": ["./src"],
-    "exclude": ["./src/testing", "./src/**/*.test.ts"],
+    "exclude": ["src/testing", "./src/**/*.test.ts"],
     "tsc-alias": {
         "resolveFullPaths": true,
         "verbose": false
