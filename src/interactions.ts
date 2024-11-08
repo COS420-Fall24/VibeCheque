@@ -24,7 +24,7 @@ export async function embed(interaction: ChatInputCommandInteraction<CacheType>)
     
     const embed2 = new EmbedBuilder()
         .setColor("#33aa33")
-        .setTitle("green Embed");
+        .setTitle("Green Embed");
     
     interaction.editReply({ embeds: [embed1, embed2] });
 }

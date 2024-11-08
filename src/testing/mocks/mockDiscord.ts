@@ -2,6 +2,11 @@ import {
   Client,
   User,
   CommandInteraction,
+  MessagePayload,
+  InteractionEditReplyOptions,
+  Message,
+  MessageContextMenuCommandInteraction,
+  MessageCreateOptions,
 } from "discord.js";
 
 type MockDiscordOptions = {
@@ -13,16 +18,20 @@ export default class MockDiscord {
     private client!: Client;
     private user!: User;
     private interaction!: CommandInteraction;
-    private interactionReply!: string;
+    private interactionReply!: string | MessagePayload | InteractionEditReplyOptions;
 
     constructor(options: MockDiscordOptions) {
         this.mockClient();
         this.user = this.createMockUser(this.client);
-        this.interaction = this.createMockInteraction(this.client, this.user, options?.command);
+        this.interaction = this.createMockInteraction(options?.command);
     }
 
     public getInteraction(): CommandInteraction {
         return this.interaction;
+    }
+
+    public getInteractionReply(): string | MessagePayload | InteractionEditReplyOptions {
+        return this.interactionReply;
     }
 
     private mockClient(): void {
@@ -41,17 +50,34 @@ export default class MockDiscord {
         } as User
     }
 
-    private createMockInteraction(client: Client, user: User, command: string): CommandInteraction {
+    public createMockInteraction(command: string): CommandInteraction {
         return {
-            client: client,
-            user: user,
+            client: this.client,
+            user: this.user,
             data: command,
             id: BigInt(1),
             // reply: jest.fn((text: string) => this.interactionReply = text),
             deferReply: jest.fn(),
-            editReply: jest.fn((text: string) => this.interactionReply = text),
-            fetchReply: jest.fn((): string => this.interactionReply),
+            editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => this.interactionReply = reply),
+            // fetchReply: jest.fn(),
             isRepliable: jest.fn(() => true)
         } as unknown as CommandInteraction;
+    }
+
+    public createMockMessageCommand(command: string, message: Message): MessageContextMenuCommandInteraction {
+        return {
+            ...this.createMockInteraction(command),
+            targetMessage: message,
+            isMessageContextMenuCommand: jest.fn(() => true)
+        } as unknown as MessageContextMenuCommandInteraction
+    }
+
+    public createMockMessage(options: MessageCreateOptions): Message {
+        return {
+            client: this.client,
+            author: this.user,
+            content: "MESSAGE CONTENT",
+            ...options
+        } as unknown as Message;
     }
 }
