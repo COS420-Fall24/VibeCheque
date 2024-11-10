@@ -1,56 +1,13 @@
 import "dotenv/config";
-import analyzeTone from "./gptRequests.js"
-import {
-    Client,
-    GatewayIntentBits,
-    ChatInputCommandInteraction,
-    CacheType,
-    Events,
-    ClientUser,
-    MessageContextMenuCommandInteraction,
-    EmbedBuilder
-} from "discord.js";
+import analyzeTone from "./gptRequests";
+import { Client, GatewayIntentBits, Events, ClientUser } from "discord.js";
+import { embed, ping, tone } from "./interactions"
 
 // define a bunch of emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
     heart: "❤️"
 };
 
-async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-    await interaction.deferReply();
-    
-    setTimeout(() => {
-        if (interaction.isRepliable()) {
-            interaction.editReply(`pong!`);
-        }
-    }, 1000);
-}
-
-async function embed(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-    await interaction.deferReply();
-
-    const embed1 = new EmbedBuilder()
-        .setColor("#aa33aa")
-        .setTitle("Purple Embed");
-    
-    const embed2 = new EmbedBuilder()
-        .setColor("#33aa33")
-        .setTitle("green Embed");
-    
-    interaction.editReply({ embeds: [embed1, embed2] });
-}
-
-
-async function tone(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
-    await interaction.deferReply();
-
-    try {
-        interaction.editReply(await analyzeTone(interaction.targetMessage.content));
-    } catch (error) {
-        interaction.editReply("Something went wrong.");
-        console.error(error);
-    }
-}
 
 async function launchBot(): Promise<Client> {
     // the client has to declare the features it uses up front so discord.js kno9ws if it can
@@ -131,11 +88,9 @@ async function launchBot(): Promise<Client> {
     });
 
     // attempt to connect
-    return await client.login(process.env.DISCORD_TOKEN)
-    .then(
-        (response: string) => {
-            return client;
-    });
+    client.login(process.env.DISCORD_TOKEN);
+
+    return client;
 }
 
 export default launchBot;
