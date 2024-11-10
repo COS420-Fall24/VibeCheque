@@ -39,3 +39,19 @@ export async function tone(interaction: MessageContextMenuCommandInteraction<Cac
         console.error(error);
     }
 }
+
+export async function clarify(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
+    interaction.reply({
+        ephemeral: true,
+        content: "Thanks for pointing that out, I'll ask for you!"
+    })
+    if (interaction.channel?.isSendable()) {
+
+        interaction.channel.send(`Hey there, ${interaction.targetMessage.author}! It seems I wasn't able to understand the tone in one of your messages:
+
+> ${interaction.targetMessage.content.split('\n').join("\n> ")}
+
+To help me learn, I was hoping you could clarify the tone of your message.
+Here's a short list of tones: \`<embed>\` (***TODO***)`);
+    }
+}
