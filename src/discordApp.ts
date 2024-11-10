@@ -1,21 +1,58 @@
 import "dotenv/config";
 import analyzeTone from "./gptRequests.js"
-import { Client, GatewayIntentBits, Interaction, CacheType, Events, ClientUser } from "discord.js";
+import {
+    Client,
+    GatewayIntentBits,
+    ChatInputCommandInteraction,
+    CacheType,
+    Events,
+    ClientUser,
+    MessageContextMenuCommandInteraction,
+    EmbedBuilder
+} from "discord.js";
 
 // define a bunch of emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
     heart: "❤️"
 };
 
-async function ping(interaction: Interaction<CacheType>): Promise<void> {
+async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+    
     setTimeout(() => {
         if (interaction.isRepliable()) {
-            interaction.reply(`pong!`);
+            interaction.editReply(`pong!`);
         }
     }, 1000);
 }
 
-async function launchBot(): Promise<string> {
+async function embed(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+
+    const embed1 = new EmbedBuilder()
+        .setColor("#aa33aa")
+        .setTitle("Purple Embed");
+    
+    const embed2 = new EmbedBuilder()
+        .setColor("#33aa33")
+        .setTitle("green Embed");
+    
+    interaction.editReply({ embeds: [embed1, embed2] });
+}
+
+
+async function tone(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+
+    try {
+        interaction.editReply(await analyzeTone(interaction.targetMessage.content));
+    } catch (error) {
+        interaction.editReply("Something went wrong.");
+        console.error(error);
+    }
+}
+
+async function launchBot(): Promise<Client> {
     // the client has to declare the features it uses up front so discord.js kno9ws if it can
     // ignore some fields and callbacks to save on hosting resources. here are some links to clarify:
     // discord.js: https://discordjs.guide/popular-topics/intents.html#error-disallowed-intents
@@ -49,7 +86,7 @@ async function launchBot(): Promise<string> {
         // any emojis will be in the discord format, and pings will show up as some
         // arbitrary snowflake (ask me or look it up) e.g. `<@1295481669603688499>`
 
-        // console.log(message.content);
+        console.log(message.content);
         if (message.mentions.has(client.user as ClientUser)) {
             // console.log("mentioned!");
             // message.react(reactions.heart);
@@ -85,14 +122,20 @@ async function launchBot(): Promise<string> {
     client.on(Events.InteractionCreate, async (interaction) => {
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === "ping") await ping(interaction);
-        } else if (interaction.isMessageComponent()) {
+            if (interaction.commandName === "embed") await embed(interaction);
+        } else if (interaction.isMessageContextMenuCommand()) {
+            if (interaction.commandName === "Tone") await tone(interaction);
         } else {
             console.log(interaction);
         }
     });
 
     // attempt to connect
-    return client.login(process.env.DISCORD_TOKEN);
+    return await client.login(process.env.DISCORD_TOKEN)
+    .then(
+        (response: string) => {
+            return client;
+    });
 }
 
 export default launchBot;
