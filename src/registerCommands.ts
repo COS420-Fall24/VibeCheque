@@ -50,4 +50,8 @@ updateCommands([
         name: "Tone",
         type: 3,
     },
+    {
+        name: "Clarify",
+        type: 3,
+    },
 ]);
