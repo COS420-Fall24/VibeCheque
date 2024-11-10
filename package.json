@@ -8,7 +8,8 @@
     "start": "npm run build && node build/index.js",
     "registerCommands": "npm run build && node build/registerCommands.js",
     "build": "npx tsc && npx tsc-alias",
-    "test": "jest --coverage --watchAll --config=jest.config.ts"
+    "test": "jest --coverage --watchAll --config=jest.config.ts",
+    "test:ci": "jest --config=jest.config.ts"
   },
   "repository": {
     "type": "git",
