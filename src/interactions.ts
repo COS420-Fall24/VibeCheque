@@ -1,5 +1,22 @@
-import { CacheType, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction } from "discord.js";
+import { CacheType, ChatInputCommandInteraction, EmbedBuilder, 
+    MessageContextMenuCommandInteraction, SlashCommandBuilder } from "discord.js";
 import analyzeTone from "./gptRequests";
+import db from './firebase'; // Import from your firebase.ts file
+import { ref, set } from "firebase/database";
+
+export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    interaction.reply({
+        ephemeral: true,
+        content: "Thanks for updating your mood!"
+    })
+    set(ref(db, 'server/' + interaction.guildId + '/username/' + interaction.id), {
+        mood: interaction.options.get('currentMood'),
+        timestamp: interaction.createdTimestamp
+    });
+}
+
+// Example: Add a document to a collection
+
 
 export async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();

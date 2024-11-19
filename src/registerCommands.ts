@@ -1,9 +1,15 @@
 import "dotenv/config";
-import { REST, Routes } from "discord.js";
+import { ApplicationCommandType, REST, Routes, ApplicationCommandOptionType } from "discord.js";
 
 declare type command = {
     name: string;
     description?: string;
+    options?: {
+        name: string,
+        description?: string, 
+        type: ApplicationCommandOptionType,
+        required: boolean
+    }[];
     type: number;
 };
 
@@ -40,6 +46,19 @@ updateCommands([
         name: "ping",
         description: 'test bot and return "pong"',
         type: 1,
+    },
+    {
+        name: "setMood",
+        description: "Sets the user's current mood",
+        options: [
+            {
+                name: "mood",
+                description: "The mood to be set",
+                type: ApplicationCommandOptionType.String,
+                required: true,
+            }
+        ],
+        type: 1
     },
     {
         name: "embed",
