@@ -5,14 +5,14 @@ import db from './firebase'; // Import from your firebase.ts file
 import { ref, set } from "firebase/database";
 
 export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.id), {
+        mood: interaction.options.get('currentmood'),
+        timestamp: interaction.createdTimestamp
+    });
     interaction.reply({
         ephemeral: true,
         content: "Thanks for updating your mood!"
     })
-    set(ref(db, 'server/' + interaction.guildId + '/username/' + interaction.id), {
-        mood: interaction.options.get('currentMood'),
-        timestamp: interaction.createdTimestamp
-    });
 }
 
 // Example: Add a document to a collection

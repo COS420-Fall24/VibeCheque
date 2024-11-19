@@ -48,14 +48,14 @@ updateCommands([
         type: 1,
     },
     {
-        name: "setMood",
+        name: "mood",
         description: "Sets the user's current mood",
         options: [
             {
-                name: "mood",
+                name: "currentmood",
                 description: "The mood to be set",
                 type: ApplicationCommandOptionType.String,
-                required: true,
+                required: true
             }
         ],
         type: 1
