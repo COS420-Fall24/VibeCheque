@@ -4,7 +4,7 @@ import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
 import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers"
-// Example: Add a document to a collection
+
 
 export async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
@@ -115,6 +115,7 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
         content: "Thanks for updating your mood!"
     })
 }
+
 //request anonymous clarification function
 export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
     await interaction.deferReply({ephemeral: true});
