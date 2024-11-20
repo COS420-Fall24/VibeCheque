@@ -1,13 +1,12 @@
 import { CacheType, ChatInputCommandInteraction, EmbedBuilder, 
     MessageContextMenuCommandInteraction, SlashCommandBuilder } from "discord.js";
-import analyzeTone from "./gptRequests";
+import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
 import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers"
 
 export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-    var currentMood = interaction.options.get('currentmood')?.value!.toString();
-
+    var currentMood = interaction.options.get('currentmood')!.value!.toString();
     let oldMood = "";
 
     // Get the old mood from database
@@ -44,14 +43,15 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
         let newRole = guild.roles.cache.find((r) => r.name === currentMood);
         member.roles.add(newRole!);
     } else {
-        await guild.roles.create({name: currentMood})
+        let moodColorHex = await analyzeMoodColor(currentMood);
+        await guild.roles.create({name: currentMood, color: `#${moodColorHex}`})
         let newRole = guild.roles.cache.find((r) => r.name === currentMood);
         member.roles.add(newRole!);
     }
 
     // Update database with roles
-    console.log(await updateOldRoleInServer(interaction, oldMood));
-    console.log(await updateNewRoleInServer(interaction, currentMood));
+    await updateOldRoleInServer(interaction, oldMood);
+    await updateNewRoleInServer(interaction, currentMood);
 
     interaction.reply({
         ephemeral: true,
