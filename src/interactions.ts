@@ -3,14 +3,16 @@ import { CacheType, ChatInputCommandInteraction, EmbedBuilder,
 import analyzeTone from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
+import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers"
 
 export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     var currentMood = interaction.options.get('currentmood')?.value!.toString();
-    var oldMood = "";
+
+    let oldMood = "";
 
     // Get the old mood from database
     var dbRef = ref(db);
-    get(child(dbRef, 'servers/' + interaction.guildId + '/username/' + interaction.user.id)).then((snapshot) => {
+    await get(child(dbRef, 'servers/' + interaction.guildId + '/username/' + interaction.user.id)).then((snapshot) => {
         if (snapshot.exists()) {
             oldMood = snapshot.val()["mood"]
         } else {
@@ -18,41 +20,38 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
         }
       }).catch((error) => {
         console.error(error);
-     });
+    });
+
+    let guild = interaction.guild!;
+    let member = await guild.members.fetch(interaction.user.id);
 
     // delete the old mood from roles
     if (interaction.guild?.roles.cache.find(role => role.name === oldMood)) {
-        let guild = interaction.guild!;
-        let role = guild.roles.cache.find((r) => r.name === currentMood);
-        let member = await guild.members.fetch(interaction.user.id);
-        member.roles.remove(role!);
-    } else {
-        let guild = interaction.guild!;
-        await guild.roles.create({name: currentMood})
-        let role = guild.roles.cache.find((r) => r.name === oldMood);
-        let member = await guild.members.fetch(interaction.user.id);
-        member.roles.remove(role!);
+        if (member.roles.cache.find(role => role.name === oldMood)){
+            let oldRole = interaction.guild?.roles.cache.find(role => role.name === oldMood);
+            member.roles.remove(oldRole!);
+        }
     }
 
     // set the new mood in database
-    set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.user.id), {
+    await set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.user.id), {
         mood: currentMood,
         timestamp: interaction.createdTimestamp
     });
 
     // update new role
     if (interaction.guild?.roles.cache.find(role => role.name === currentMood)) {
-        let guild = interaction.guild!;
-        let role = guild.roles.cache.find((r) => r.name === currentMood);
-        let member = await guild.members.fetch(interaction.user.id);
-        member.roles.add(role!);
+        let newRole = guild.roles.cache.find((r) => r.name === currentMood);
+        member.roles.add(newRole!);
     } else {
-        let guild = interaction.guild!;
         await guild.roles.create({name: currentMood})
-        let role = guild.roles.cache.find((r) => r.name === currentMood);
-        let member = await guild.members.fetch(interaction.user.id);
-        member.roles.add(role!);
+        let newRole = guild.roles.cache.find((r) => r.name === currentMood);
+        member.roles.add(newRole!);
     }
+
+    // Update database with roles
+    console.log(await updateOldRoleInServer(interaction, oldMood));
+    console.log(await updateNewRoleInServer(interaction, currentMood));
 
     interaction.reply({
         ephemeral: true,
