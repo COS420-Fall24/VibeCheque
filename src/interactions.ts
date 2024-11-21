@@ -55,3 +55,27 @@ To help me learn, I was hoping you could clarify the tone of your message.
 Here's a short list of tones: \`<embed>\` (***TODO***)`);
     }
 }
+//request anonymous clarification function
+export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
+    await interaction.deferReply();
+
+    try {
+        const targetMessage = interaction.targetMessage;
+
+        if(targetMessage){
+            await targetMessage.author.send(`You've received an anonymous request for clarification on your message: "${targetMessage.content}". Will you clarify your tone?`);
+
+            await interaction.reply({
+                ephemeral: true,
+                content: "Your request for anonymous clarification has been sent.",
+                
+            });
+        }
+    } catch(error){
+        console.error("Error handling anonymous clarification request: ", error);
+        await interaction.reply({
+            ephemeral: true,
+            content: "There was an error handling the clarification request",
+        });
+    }
+}
