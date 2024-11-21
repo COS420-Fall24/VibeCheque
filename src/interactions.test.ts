@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
-import { embed, ping, tone } from "./interactions";
+import { clarify, embed, ping, tone } from "./interactions";
 import MockDiscord from "./testing/mocks/mockDiscord";
 import analyzeTone from "./gptRequests";
 jest.mock("./gptRequests")
@@ -59,5 +59,81 @@ describe("Testing slash commands", ()=>{
 
         expect(spyDeferReply).toHaveBeenCalled();
         expect(spyEditReply).not.toHaveBeenCalledWith("Something went wrong.");
+    });
+
+    /*
+     * The clarify function should take a message, defer a reply, then reply to only the user who requested clarification.
+     *
+     * The reply should be "Thanks for pointing that out, I'll ask for you!"
+    **/
+    test("`clarify` function replies with \"Thanks for pointing that out, I'll ask for you!\" to only the caller.", async ()=>{
+        const discord = new MockDiscord({ command: "/ping" });
+
+        const message = discord.createMockMessage({
+            content: "This is a test message"
+        })
+
+        const interaction = discord.createMockMessageCommand("Clarify", message);
+
+        const spyReply = jest.spyOn(interaction, "reply");
+
+        await clarify(interaction);
+
+        expect(spyReply).toHaveBeenCalledWith({
+            ephemeral: true,
+            content: "Thanks for pointing that out, I'll ask for you!"
+        });
+    });
+
+    /*
+     * The clarify function should take a message, and send a message in the same channel asking the sender for clarification
+     * The reply should be formatted as such:
+     * 
+     * Hey there, <author>! It seems I wasn't able to understand the tone in one of your messages:
+     * 
+     * > This is what the
+     * > original message was,
+     * > and it may have multiple lines.
+     * 
+     * To help me learn, I was hoping you could clarify the tone of your message.
+     * Here's a short list of tones: \`<embed>\` (***TODO***)
+    **/
+    test("`clarify` function defers a reply, then replies with the original message in block quotes, with the proper formatting.", async ()=>{
+        const discord = new MockDiscord({ command: "/ping" });
+
+        const singleLineMessage = discord.createMockMessage({
+            content: "This is a test message"
+        });
+        const singleLineResponse = `Hey there, <@user-id>! It seems I wasn't able to understand the tone in one of your messages:
+
+> This is a test message
+
+To help me learn, I was hoping you could clarify the tone of your message.
+Here's a short list of tones: \`<embed>\` (***TODO***)`;
+
+        const multiLineMessage = discord.createMockMessage({
+            content: `This is a
+test message`
+        });
+        const multiLineResponse = `Hey there, <@user-id>! It seems I wasn't able to understand the tone in one of your messages:
+
+> This is a
+> test message
+
+To help me learn, I was hoping you could clarify the tone of your message.
+Here's a short list of tones: \`<embed>\` (***TODO***)`;
+
+        const singleLineInteraction = discord.createMockMessageCommand("Clarify", singleLineMessage);
+        const multiLineInteraction = discord.createMockMessageCommand("Clarify", multiLineMessage);
+
+        await clarify(singleLineInteraction);
+        const singleLineLatestMessage = discord.getLatestMessage() as string
+
+        expect(singleLineLatestMessage).toBe(singleLineResponse);
+
+        await clarify(multiLineInteraction);
+        const multiLineLatestMessage = discord.getLatestMessage() as string
+
+        expect(multiLineLatestMessage).toBe(multiLineResponse);
     });
 });
