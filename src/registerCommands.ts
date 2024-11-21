@@ -54,4 +54,8 @@ updateCommands([
         name: "Clarify",
         type: 3,
     },
+    {
+        name:"Request Anonymous Clarification",
+        type: 3,
+    }
 ]);
