@@ -1,5 +1,67 @@
-import { CacheType, ChatInputCommandInteraction, EmbedBuilder, MessageContextMenuCommandInteraction } from "discord.js";
+import { CacheType, ChatInputCommandInteraction, EmbedBuilder, 
+    MessageContextMenuCommandInteraction, SlashCommandBuilder } from "discord.js";
 import analyzeTone from "./gptRequests";
+import db from './firebase'; // Import from your firebase.ts file
+import { ref, set, get, child } from "firebase/database";
+
+export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    var currentMood = interaction.options.get('currentmood')?.value!.toString();
+    var oldMood = "";
+
+    // Get the old mood from database
+    var dbRef = ref(db);
+    get(child(dbRef, 'servers/' + interaction.guildId + '/username/' + interaction.user.id)).then((snapshot) => {
+        if (snapshot.exists()) {
+            oldMood = snapshot.val()["mood"]
+        } else {
+          console.log("No data available");
+        }
+      }).catch((error) => {
+        console.error(error);
+     });
+
+    // delete the old mood from roles
+    if (interaction.guild?.roles.cache.find(role => role.name === oldMood)) {
+        let guild = interaction.guild!;
+        let role = guild.roles.cache.find((r) => r.name === currentMood);
+        let member = await guild.members.fetch(interaction.user.id);
+        member.roles.remove(role!);
+    } else {
+        let guild = interaction.guild!;
+        await guild.roles.create({name: currentMood})
+        let role = guild.roles.cache.find((r) => r.name === oldMood);
+        let member = await guild.members.fetch(interaction.user.id);
+        member.roles.remove(role!);
+    }
+
+    // set the new mood in database
+    set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.user.id), {
+        mood: currentMood,
+        timestamp: interaction.createdTimestamp
+    });
+
+    // update new role
+    if (interaction.guild?.roles.cache.find(role => role.name === currentMood)) {
+        let guild = interaction.guild!;
+        let role = guild.roles.cache.find((r) => r.name === currentMood);
+        let member = await guild.members.fetch(interaction.user.id);
+        member.roles.add(role!);
+    } else {
+        let guild = interaction.guild!;
+        await guild.roles.create({name: currentMood})
+        let role = guild.roles.cache.find((r) => r.name === currentMood);
+        let member = await guild.members.fetch(interaction.user.id);
+        member.roles.add(role!);
+    }
+
+    interaction.reply({
+        ephemeral: true,
+        content: "Thanks for updating your mood!"
+    })
+}
+
+// Example: Add a document to a collection
+
 
 export async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();

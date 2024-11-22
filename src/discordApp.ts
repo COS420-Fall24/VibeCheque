@@ -80,6 +80,7 @@ async function launchBot(): Promise<Client> {
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === "ping") await ping(interaction);
             if (interaction.commandName === "embed") await embed(interaction);
+            if (interaction.commandName === "mood") await mood(interaction);
         } else if (interaction.isMessageContextMenuCommand()) {
             if (interaction.commandName === "Tone") await tone(interaction);
             if (interaction.commandName === "Clarify") await clarify(interaction);
