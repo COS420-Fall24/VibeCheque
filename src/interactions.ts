@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType,
     ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageContextMenuCommandInteraction, 
     SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "discord.js";
 import analyzeTone from "./gptRequests";
-//import db from './firebase'; // Import from your firebase.ts file
+import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
 //getTones and Clarify rely on toneJSON. Implementing it in firebase would be better
 import toneJSON from "./tones.json" assert { type: "json"};
@@ -13,7 +13,7 @@ interface Tone {
     indicator: string;
 }
 
-/*export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     var currentMood = interaction.options.get('currentmood')?.value!.toString();
     var oldMood = "";
 
@@ -67,7 +67,7 @@ interface Tone {
         ephemeral: true,
         content: "Thanks for updating your mood!"
     })
-}*/
+}
 
 // Example: Add a document to a collection
 

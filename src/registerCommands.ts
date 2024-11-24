@@ -57,7 +57,7 @@ updateCommands([
         description: "lists a sample of tones and their description",
         type: 1,
     },
-    /*{
+    {
         name: "mood",
         description: "Sets the user's current mood",
         options: [
@@ -69,7 +69,7 @@ updateCommands([
             }
         ],
         type: 1
-    },*/
+    },
     {
         name: "embed",
         description: "test embed feature of discord",
