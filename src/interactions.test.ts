@@ -5,10 +5,10 @@ import analyzeTone from "./gptRequests";
 jest.mock("./gptRequests")
 
 describe("Testing slash commands", ()=>{
-    /*
+    /**
      * The ping function should defer a reply, then respond with "pong!" at least a second later if the interaction
      * is repliable
-    **/
+     */
     test("`ping` function defers a reply, then replies with \"pong!\" after 1000 ms if the interaction is repliable", async ()=>{
         const discord = new MockDiscord({ command: "/ping" });
 
@@ -25,10 +25,10 @@ describe("Testing slash commands", ()=>{
         expect(spyEditReply).toHaveBeenCalledWith("pong!");
     });
 
-    /*
+    /**
      * The ping function should defer a reply, then reject the promise at least a second later if the interaction
      * is repliable
-    **/
+    */
     test("`ping` function defers a reply, then rejects the promise after 1000 ms if the interaction is not repliable", async ()=>{
         const discord = new MockDiscord({ command: "/ping" });
 
@@ -47,10 +47,10 @@ describe("Testing slash commands", ()=>{
         expect(spyReject).toHaveBeenCalled();
     });
 
-    /*
+    /**
      * The embed function should reply with two embeds. The first should have the title "Purple Embed", and the second
      * should have the title "Green Embed".
-    **/
+    */
     test("`embed` function replies with \"Purple Embed\" and \"Green Embed\", respectively", async ()=>{
         const discord = new MockDiscord({ command: "/embed" });
 
@@ -73,10 +73,10 @@ describe("Testing slash commands", ()=>{
         expect(embed2.data.title).toMatch(/Green Embed/);
     });
 
-    /*
+    /**
      * The tone function should take a message command, defer a reply, and reply with any tone other than the error message
      * "Something went wrong."
-    **/
+    */
     test("`tone` function defers a reply, then replies with something other than \"Something went wrong.\"", async ()=>{
         // init discord
         const discord = new MockDiscord({ command: "/ping" });
@@ -98,12 +98,12 @@ describe("Testing slash commands", ()=>{
         expect(spyEditReply).not.toHaveBeenCalledWith("Something went wrong.");
     });
 
-    /*
+    /**
      * The tone function should take a message command, defer a reply, and reply with the error message
      * "Something went wrong." if an error occurs while parsing tone
      * 
      * The function should then throw the error
-    **/
+    */
     test("`tone` function defers a reply, then replies with \"Something went wrong.\" and throws an error if the tone generation fails", async ()=>{
         // init discord
         const discord = new MockDiscord({ command: "/ping" });
@@ -131,11 +131,11 @@ describe("Testing slash commands", ()=>{
         expect(spyStdErr).toHaveBeenCalled();
     });
 
-    /*
+    /**
      * The clarify function should take a message, defer a reply, then reply to only the user who requested clarification.
      *
      * The reply should be "Thanks for pointing that out, I'll ask for you!"
-    **/
+    */
     test("`clarify` function replies with \"Thanks for pointing that out, I'll ask for you!\" to only the caller.", async ()=>{
         const discord = new MockDiscord({ command: "/ping" });
 
@@ -155,7 +155,7 @@ describe("Testing slash commands", ()=>{
         });
     });
 
-    /*
+    /**
      * The clarify function should take a message, and send a message in the same channel asking the sender for clarification
      * The reply should be formatted as such:
      * 
@@ -167,7 +167,7 @@ describe("Testing slash commands", ()=>{
      * 
      * To help me learn, I was hoping you could clarify the tone of your message.
      * Here's a short list of tones: \`<embed>\` (***TODO***)
-    **/
+    */
     test("`clarify` function defers a reply, then replies with the original message in block quotes, with the proper formatting.", async ()=>{
         const discord = new MockDiscord({ command: "/ping" });
 
