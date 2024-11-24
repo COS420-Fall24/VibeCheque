@@ -20,6 +20,8 @@ export async function updateCommands(commands: command[]): Promise<void> {
         process.env.DISCORD_TOKEN as string,
     );
 
+    console.log(rest);
+
     try {
         console.log("refreshing commands");
 

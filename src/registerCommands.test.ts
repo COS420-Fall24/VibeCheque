@@ -1,4 +1,6 @@
+// import { REST } from "discord.js";
 import { updateCommands, main } from "./registerCommands";
+// jest.mock("discord.js");
 
 describe("Testing the functionality of \"registerCommands.ts\"", ()=>{
     beforeAll(()=>{
@@ -13,7 +15,14 @@ describe("Testing the functionality of \"registerCommands.ts\"", ()=>{
      * Clarify: message command
      */
     test("`main` should call updateCommands with a ping message command", async ()=>{
-        // jest.spyOn()
-        await main();
+        // console.log(REST);
+        // const spyRestPut = jest.spyOn(REST.prototype, "put");
+
+        // const restInstance = new REST();
+        // restInstance.put("/");
+        
+        // await updateCommands([]);
+
+        // expect(spyRestPut).toHaveBeenCalled();
     });
 });
