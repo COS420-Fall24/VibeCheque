@@ -1,4 +1,4 @@
-import * as dotenv from 'dotenv';
+/*import * as dotenv from 'dotenv';
 
 dotenv.config(); // Load environment variables from .env
 
@@ -22,4 +22,4 @@ const app = initializeApp(firebaseConfig);
 // Initialize Realtime Database and get a reference to the service
 const database = getDatabase(app);
 
-export default database; // Export the Firestore instance
+export default database; // Export the Firestore instance*/

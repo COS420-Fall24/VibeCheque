@@ -1,10 +1,22 @@
-import { CacheType, ChatInputCommandInteraction, EmbedBuilder, 
-    MessageContextMenuCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, 
+    ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageContextMenuCommandInteraction, 
+    SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "discord.js";
 import analyzeTone from "./gptRequests";
-import db from './firebase'; // Import from your firebase.ts file
+//import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
+import toneJSON from "./tones.json" assert { type: "json"};
 
-export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+interface Tone {
+    name: string;
+    description: string;
+    indicator: string;
+}
+
+interface ToneList {
+    tones: Tone[];
+}
+
+/*export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     var currentMood = interaction.options.get('currentmood')?.value!.toString();
     var oldMood = "";
 
@@ -58,7 +70,7 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
         ephemeral: true,
         content: "Thanks for updating your mood!"
     })
-}
+}*/
 
 // Example: Add a document to a collection
 
@@ -91,6 +103,147 @@ export async function embed(interaction: ChatInputCommandInteraction<CacheType>)
     interaction.editReply({ embeds: [embed1, embed2] });
 }
 
+export async function action(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+
+    //Builds the menu
+    const select = new StringSelectMenuBuilder()
+        .setCustomId('example')
+        .setPlaceholder('select an option')
+        .addOptions(
+            //Build the option:
+            //Has a label (setLabel), description (setDescription), value (setValue), emoji (setEmoji), and can be set to selected by default (setDefault)
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Option 1 Label')
+                .setDescription('Option 1 Description')
+                .setValue('Option 1 Value'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Option 2 Label')
+                .setDescription('Option 2 Description')
+                .setValue('Option 2 Value'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('Option 3 Label')
+                .setDescription('Option 3 Description')
+                .setValue('Option 3 Value'),
+        );
+    
+    //Buttons have five different styles, primary, secondary, success, danger, and link
+    //Each button has a customId, label, style, link, and emoji (SKUid doesn't really apply to our project)
+    //A button can also be set to disabled by default
+    const primary = new ButtonBuilder()
+        .setCustomId('primary')
+        .setLabel('Primary Button')
+        .setStyle(ButtonStyle.Primary);
+
+    const secondary = new ButtonBuilder()
+        .setCustomId('secondary')
+        .setLabel('Secondary Button')
+        .setStyle(ButtonStyle.Secondary);
+
+    const success = new ButtonBuilder()
+        .setCustomId('success')
+        .setLabel('Success Button')
+        .setStyle(ButtonStyle.Success);
+
+    const danger = new ButtonBuilder()
+        .setCustomId('danger')
+        .setLabel('Danger Button')
+        .setStyle(ButtonStyle.Danger);
+    
+    //Important! URL and CustomID are mutually exclusive
+    const link = new ButtonBuilder()
+        .setLabel('Link Button')
+        .setURL('https://discordjs.guide/message-components/buttons.html#button-styles')
+        .setStyle(ButtonStyle.Link);
+    
+    //row1 and row2 are the rows of a message, there can be up to five rows, each with five maximum elements
+    //Select menus have a width value of 5, while buttons have a width of 1
+    const row1 = new ActionRowBuilder<StringSelectMenuBuilder>()
+        .addComponents(select);
+
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(primary, secondary, success, danger, link);
+
+    const response = await interaction.editReply({
+        content: 'An example select menu',
+        components: [row1, row2],
+    });
+
+    //This filter ensures that only the user who issued the command can press the buttons
+    const collectorFilter = (i: { user: { id: string; }; }) => i.user.id === interaction.user.id;
+
+    //this approach works to collect only one interaction
+    /*try {
+        const confirmation = await response.awaitMessageComponent({ filter: collectorFilter, time: 60_000});
+
+        switch (confirmation.customId) {
+            case 'primary':
+                await confirmation.update({ content: `${interaction.user.displayName} has pressed the primary button`, components: [] });
+                break;
+            case 'secondary':
+                await confirmation.update({ content: `${interaction.user.displayName} has pressed the secondary button`, components: [] });
+                break;
+            case 'success':
+                await confirmation.update({ content: `${interaction.user.displayName} has pressed the success button`, components: [] });
+                break;
+            case 'danger':
+                await confirmation.update({ content: `${interaction.user.displayName} has pressed the danger button`, components: [] });
+                break;
+        }
+    } catch (e) {
+        await interaction.editReply({ content: 'No interaction for the last minute, cancelling interaction', components: [] });
+    }*/
+
+    const collector = response.createMessageComponentCollector({ filter: collectorFilter, componentType: ComponentType.Button, time: 180_000});
+
+    //For each interaction with the components of componentType, do the following
+    collector.on('collect', async i => {
+        const selection = i.customId;
+        await i.reply(`${i.user} has selected ${selection}!\n`)
+    });
+}
+
+export async function getTones(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+
+    const toneMenu = new StringSelectMenuBuilder()
+        .setCustomId('tone select menu')
+        .setPlaceholder('Select a tone')
+        .setMinValues(1)
+        .setMaxValues(5);
+
+    toneJSON.tones.forEach((tone: Tone) => {
+        toneMenu.addOptions(
+            new StringSelectMenuOptionBuilder()
+                .setValue(` ${tone.name} (${tone.indicator})`)
+                .setLabel(`${tone.name}: ${tone.indicator}`)
+                .setDescription(`${tone.description}`),
+        );
+    });
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+        .addComponents(toneMenu);
+
+    const response = await interaction.editReply({
+        content: 'Here is a list of tones: ',
+        components: [row],
+    });
+
+    const collectorFilter = (i: {user: {id: string}; }) => i.user.id === interaction.user.id;
+
+    const collector = response.createMessageComponentCollector({ filter: collectorFilter, componentType: ComponentType.StringSelect, time: 180_000});
+
+    let selection: string[] = [];
+
+    collector.on('collect', async i => {
+        selection = i.values;
+        await interaction.editReply({
+            content: `${interaction.user.displayName}, you have selected the following tones: ${selection}`,
+            components: [],
+        });
+    });
+}
+
 export async function tone(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
 
@@ -107,13 +260,48 @@ export async function clarify(interaction: MessageContextMenuCommandInteraction<
         ephemeral: true,
         content: "Thanks for pointing that out, I'll ask for you!"
     })
+
+    const toneMenu = new StringSelectMenuBuilder()
+        .setCustomId('tone select menu')
+        .setPlaceholder('Select a tone')
+        .setMinValues(1)
+        .setMaxValues(5);
+
+    toneJSON.tones.forEach((tone: Tone) => {
+        toneMenu.addOptions(
+            new StringSelectMenuOptionBuilder()
+                .setValue(` ${tone.name} (${tone.indicator})`)
+                .setLabel(`${tone.name}: ${tone.indicator}`)
+                .setDescription(`${tone.description}`),
+        );
+    });
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+        .addComponents(toneMenu);
+
     if (interaction.channel?.isSendable()) {
 
-        interaction.channel.send(`Hey there, ${interaction.targetMessage.author}! It seems I wasn't able to understand the tone in one of your messages:
+        const request = await interaction.channel.send({
+            content: `Hey there, ${interaction.targetMessage.author}! It seems I wasn't able to understand the tone in one of your messages:
 
 > ${interaction.targetMessage.content.split('\n').join("\n> ")}
 
 To help me learn, I was hoping you could clarify the tone of your message.
-Here's a short list of tones: \`<embed>\` (***TODO***)`);
+Here's a short list of tones, select up to five that apply:`,
+        components: [row]});
+
+        const collectorFilter = (i: {user: {id: string}; }) => i.user.id === interaction.targetMessage.author.id;
+
+        const collector = request.createMessageComponentCollector({ filter: collectorFilter, componentType: ComponentType.StringSelect, time: 180_000});
+
+        let selection: string[] = [];
+
+        collector.on('collect', async i => {
+            selection = i.values;
+            await interaction.targetMessage.reply({
+                content: `This message was marked with the following tones: ${selection}`
+            });
+            await request.delete();
+        });
     }
 }

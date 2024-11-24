@@ -48,6 +48,16 @@ updateCommands([
         type: 1,
     },
     {
+        name: "action",
+        description: "tests the action row feature of discord",
+        type: 1,
+    },
+    {
+        name: "list-tones",
+        description: "lists a sample of tones and their description",
+        type: 1,
+    },
+    /*{
         name: "mood",
         description: "Sets the user's current mood",
         options: [
@@ -59,7 +69,7 @@ updateCommands([
             }
         ],
         type: 1
-    },
+    },*/
     {
         name: "embed",
         description: "test embed feature of discord",
