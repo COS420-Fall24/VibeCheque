@@ -70,7 +70,7 @@ export default class MockDiscord {
         return mockUser;
     }
 
-    public createMockInteraction(command: string): CommandInteraction {
+    public createMockInteraction(command: string, repliable: boolean = true): CommandInteraction {
         return {
             client: this.client,
             user: this.user,
@@ -81,7 +81,7 @@ export default class MockDiscord {
             deferReply: jest.fn(),
             editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => this.interactionReply = reply),
             // fetchReply: jest.fn(),
-            isRepliable: jest.fn(() => true)
+            isRepliable: jest.fn(() => repliable)
         } as unknown as CommandInteraction;
     }
 

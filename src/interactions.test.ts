@@ -1,11 +1,15 @@
-import { ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
 import { clarify, embed, ping, tone } from "./interactions";
 import MockDiscord from "./testing/mocks/mockDiscord";
 import analyzeTone from "./gptRequests";
 jest.mock("./gptRequests")
 
 describe("Testing slash commands", ()=>{
-    test("`ping` function defers a reply, then replies with \"pong!\" after 1000 ms", async ()=>{
+    /*
+     * The ping function should defer a reply, then respond with "pong!" at least a second later if the interaction
+     * is repliable
+    **/
+    test("`ping` function defers a reply, then replies with \"pong!\" after 1000 ms if the interaction is repliable", async ()=>{
         const discord = new MockDiscord({ command: "/ping" });
 
         const interaction = discord.getInteraction() as ChatInputCommandInteraction;
@@ -21,6 +25,32 @@ describe("Testing slash commands", ()=>{
         expect(spyEditReply).toHaveBeenCalledWith("pong!");
     });
 
+    /*
+     * The ping function should defer a reply, then reject the promise at least a second later if the interaction
+     * is repliable
+    **/
+    test("`ping` function defers a reply, then rejects the promise after 1000 ms if the interaction is not repliable", async ()=>{
+        const discord = new MockDiscord({ command: "/ping" });
+
+        const interaction = discord.createMockInteraction("/ping", false) as ChatInputCommandInteraction;
+        const spyDeferReply = jest.spyOn(interaction, "deferReply");
+        const spyEditReply = jest.spyOn(interaction, "editReply");
+        const spyReject = jest.fn();
+
+        const startTime = jest.getRealSystemTime();
+        await ping(interaction).catch(spyReject);
+        const endTime = jest.getRealSystemTime();
+
+        expect(endTime-startTime).toBeGreaterThanOrEqual(1000);
+        expect(spyDeferReply).toHaveBeenCalled();
+        expect(spyEditReply).not.toHaveBeenCalled();
+        expect(spyReject).toHaveBeenCalled();
+    });
+
+    /*
+     * The embed function should reply with two embeds. The first should have the title "Purple Embed", and the second
+     * should have the title "Green Embed".
+    **/
     test("`embed` function replies with \"Purple Embed\" and \"Green Embed\", respectively", async ()=>{
         const discord = new MockDiscord({ command: "/embed" });
 
@@ -43,14 +73,21 @@ describe("Testing slash commands", ()=>{
         expect(embed2.data.title).toMatch(/Green Embed/);
     });
 
+    /*
+     * The tone function should take a message command, defer a reply, and reply with any tone other than the error message
+     * "Something went wrong."
+    **/
     test("`tone` function defers a reply, then replies with something other than \"Something went wrong.\"", async ()=>{
+        // init discord
         const discord = new MockDiscord({ command: "/ping" });
 
+        // init interactioncommand
         const message = discord.createMockMessage({
             content: "This is a test message"
         })
         const interaction = discord.createMockMessageCommand("Tone", message);
 
+        // set up spies
         const spyDeferReply = jest.spyOn(interaction, "deferReply");
         const spyEditReply = jest.spyOn(interaction, "editReply");
         (analyzeTone as jest.Mock).mockReturnValue("this message has a TONE tone")
@@ -59,6 +96,39 @@ describe("Testing slash commands", ()=>{
 
         expect(spyDeferReply).toHaveBeenCalled();
         expect(spyEditReply).not.toHaveBeenCalledWith("Something went wrong.");
+    });
+
+    /*
+     * The tone function should take a message command, defer a reply, and reply with the error message
+     * "Something went wrong." if an error occurs while parsing tone
+     * 
+     * The function should then throw the error
+    **/
+    test("`tone` function defers a reply, then replies with \"Something went wrong.\" and throws an error if the tone generation fails", async ()=>{
+        // init discord
+        const discord = new MockDiscord({ command: "/ping" });
+
+        // init interactioncommand
+        const message = discord.createMockMessage({
+            content: "This is a test message"
+        })
+        const interaction = discord.createMockMessageCommand("Tone", message);
+
+        // set up spies
+        const spyDeferReply = jest.spyOn(interaction, "deferReply");
+        const spyEditReply = jest.spyOn(interaction, "editReply");
+        spyEditReply.mockImplementationOnce((message: any): Promise<Message<boolean>> => {
+            throw new Error("TEST ERROR");
+        });
+        (analyzeTone as jest.Mock).mockReturnValue("Unknown error - can't generate the tone at the moment")
+        const spyStdErr = jest.spyOn(console, "error");
+        spyStdErr.mockImplementation(error => {});
+
+        await tone(interaction);
+
+        expect(spyDeferReply).toHaveBeenCalled();
+        expect(spyEditReply).toHaveBeenCalledWith("Something went wrong.");
+        expect(spyStdErr).toHaveBeenCalled();
     });
 
     /*
