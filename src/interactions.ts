@@ -4,16 +4,13 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType,
 import analyzeTone from "./gptRequests";
 //import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
+//getTones and Clarify rely on toneJSON. Implementing it in firebase would be better
 import toneJSON from "./tones.json" assert { type: "json"};
 
 interface Tone {
     name: string;
     description: string;
     indicator: string;
-}
-
-interface ToneList {
-    tones: Tone[];
 }
 
 /*export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
@@ -203,19 +200,22 @@ export async function action(interaction: ChatInputCommandInteraction<CacheType>
     });
 }
 
+//A function which creates a select menu from the elements in tones.json for users to select
 export async function getTones(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
 
+    //create the tone menu which allows a user to select 1-5 tones
     const toneMenu = new StringSelectMenuBuilder()
         .setCustomId('tone select menu')
         .setPlaceholder('Select a tone')
         .setMinValues(1)
         .setMaxValues(5);
 
+    //For each tone in toneJson.tones, we create a new option for our tone menu
     toneJSON.tones.forEach((tone: Tone) => {
         toneMenu.addOptions(
             new StringSelectMenuOptionBuilder()
-                .setValue(` ${tone.name} (${tone.indicator})`)
+                .setValue(`${tone.name} (${tone.indicator})`)
                 .setLabel(`${tone.name}: ${tone.indicator}`)
                 .setDescription(`${tone.description}`),
         );
@@ -224,19 +224,22 @@ export async function getTones(interaction: ChatInputCommandInteraction<CacheTyp
     const row = new ActionRowBuilder<StringSelectMenuBuilder>()
         .addComponents(toneMenu);
 
+    //await the promise and edit the reply with the following
+    //row is the actionRow which hold the select menu
     const response = await interaction.editReply({
         content: 'Here is a list of tones: ',
         components: [row],
     });
 
+    //creates a filter that only allows the user who sent the interaction to edit it
     const collectorFilter = (i: {user: {id: string}; }) => i.user.id === interaction.user.id;
 
+    //creates a collector with the filter above that times out in three minutes
     const collector = response.createMessageComponentCollector({ filter: collectorFilter, componentType: ComponentType.StringSelect, time: 180_000});
 
-    let selection: string[] = [];
-
+    //edit the reply to say what the user selected
     collector.on('collect', async i => {
-        selection = i.values;
+        const selection = i.values;
         await interaction.editReply({
             content: `${interaction.user.displayName}, you have selected the following tones: ${selection}`,
             components: [],
@@ -261,6 +264,7 @@ export async function clarify(interaction: MessageContextMenuCommandInteraction<
         content: "Thanks for pointing that out, I'll ask for you!"
     })
 
+    //create the tone menu and add the options from toneJSON
     const toneMenu = new StringSelectMenuBuilder()
         .setCustomId('tone select menu')
         .setPlaceholder('Select a tone')
@@ -290,14 +294,14 @@ To help me learn, I was hoping you could clarify the tone of your message.
 Here's a short list of tones, select up to five that apply:`,
         components: [row]});
 
+        //create the filter and the collector
         const collectorFilter = (i: {user: {id: string}; }) => i.user.id === interaction.targetMessage.author.id;
 
         const collector = request.createMessageComponentCollector({ filter: collectorFilter, componentType: ComponentType.StringSelect, time: 180_000});
 
-        let selection: string[] = [];
-
+        //Get the response from the, reply to the target message the tones, and delete the request
         collector.on('collect', async i => {
-            selection = i.values;
+            const selection = i.values;
             await interaction.targetMessage.reply({
                 content: `This message was marked with the following tones: ${selection}`
             });
