@@ -1,7 +1,8 @@
-import { ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
+import { APIEmbed, ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
 import { clarify, embed, ping, tone } from "./interactions";
-import MockDiscord from "./testing/mocks/mockDiscord";
+import { MockDiscord } from "./testing/mocks/mockDiscord";
 import analyzeTone from "./gptRequests";
+jest.mock("discord.js")
 jest.mock("./gptRequests")
 
 describe("Testing slash commands", ()=>{
@@ -51,26 +52,28 @@ describe("Testing slash commands", ()=>{
      * The embed function should reply with two embeds. The first should have the title "Purple Embed", and the second
      * should have the title "Green Embed".
     */
-    test("`embed` function replies with \"Purple Embed\" and \"Green Embed\", respectively", async ()=>{
+    test("`embed` function defers a reply, then replies with \"Purple Embed\" and \"Green Embed\", respectively", async ()=>{
         const discord = new MockDiscord({ command: "/embed" });
 
         const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+        const spyDeferReply = jest.spyOn(interaction, "deferReply");
+        const spyEditReply = jest.spyOn(interaction, "editReply");
 
         await embed(interaction);
 
-        const reply = discord.getInteractionReply() as any;
+        expect(spyDeferReply).toHaveBeenCalled();
 
-        expect(reply).toHaveProperty("embeds");
-        expect(reply.embeds).toHaveProperty("length");
-        expect(reply.embeds.length).toBe(2);
-        expect(reply.embeds[0] instanceof EmbedBuilder).toBeTruthy();
-        expect(reply.embeds[1] instanceof EmbedBuilder).toBeTruthy();
+        const message = spyEditReply.mock.calls[0][0] as InteractionEditReplyOptions;
 
-        const embed1: EmbedBuilder = reply.embeds[0];
-        const embed2: EmbedBuilder = reply.embeds[1];
+        expect(message.embeds!.length).toEqual(2);
 
-        expect(embed1.data.title).toMatch(/Purple Embed/);
-        expect(embed2.data.title).toMatch(/Green Embed/);
+        const embed1 = (message.embeds![0] as EmbedBuilder);
+        const embed2 = (message.embeds![1] as EmbedBuilder);
+
+        console.log(embed1.data);
+
+        expect(embed1.data.title!).toMatch(/Purple Embed/);
+        expect(embed2.data.title!).toMatch(/Green Embed/);
     });
 
     /**

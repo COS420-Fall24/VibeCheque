@@ -8,14 +8,14 @@ import {
   MessageContextMenuCommandInteraction,
   MessageCreateOptions,
   Channel,
+  REST,
 } from "discord.js";
 
 type MockDiscordOptions = {
     command: string
 }
 
-
-export default class MockDiscord {
+export class MockDiscord {
     private client!: Client;
     private user!: User;
     private channel!: Channel;
