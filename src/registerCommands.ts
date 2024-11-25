@@ -80,6 +80,10 @@ updateCommands([
         type: 3,
     },
     {
+        name: "Add Tone",
+        type: 3,
+    },
+    {
         name: "Clarify",
         type: 3,
     },
