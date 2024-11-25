@@ -117,3 +117,54 @@ To help me learn, I was hoping you could clarify the tone of your message.
 Here's a short list of tones: \`<embed>\` (***TODO***)`);
     }
 }
+//request anonymous clarification function
+export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
+    await interaction.deferReply({ephemeral: true});
+
+    try {
+        const targetMessage = interaction.targetMessage;
+
+        if(targetMessage){ 
+            //Send an anonymous request to user of message
+            await targetMessage.author.send(`You've received an anonymous request for clarification on your message: "${targetMessage.content}". Will you clarify your tone?`);
+            //Let the user who requested clarification know that the message sent
+            await interaction.editReply({
+                //ephemeral: true,
+                content: "Your request for anonymous clarification has been sent.",
+                
+            });
+
+            //Bot waits for the message - 60 seconds. Maybe longer or shorter? no idea
+            const filter = (response: any) => response.author.id === targetMessage.author.id && response.channelId === targetMessage.author.dmChannel?.id;
+            const collector = targetMessage.author.dmChannel?.createMessageCollector({filter, time: 60000});
+
+            collector?.on("collect", async (clarificationMessage) => {
+                //This analyzes the response
+                const toneAnalysis = await analyzeTone(clarificationMessage.content)
+                //send the analyzed tone back to requester
+                await interaction.user.send(`Requested Tone Clarification: "${toneAnalysis}"`);
+
+                //stops the collector 
+                collector.stop();
+
+            });
+
+            //If the user doesn't respond in time, this will run
+            collector?.on("end", async (collected, reason)=> {
+                if (reason === "time"){
+                    await interaction.user.send("The user did not respond in time.")//We can maybe change the time, and how this works later
+                }
+            });
+        }
+
+
+
+
+    } catch(error){
+        console.error("Error handling anonymous clarification request: ", error);
+        await interaction.editReply({
+            //ephemeral: true,
+            content: "There was an error handling the clarification request",
+        });
+    }
+}

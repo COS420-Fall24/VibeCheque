@@ -1,7 +1,7 @@
 import "dotenv/config";
 import analyzeTone from "./gptRequests";
 import { Client, GatewayIntentBits, Events, ClientUser } from "discord.js";
-import { clarify, embed, ping, tone, mood } from "./interactions"
+import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
 
 // define a bunch of emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
@@ -84,6 +84,7 @@ async function launchBot(): Promise<Client> {
         } else if (interaction.isMessageContextMenuCommand()) {
             if (interaction.commandName === "Tone") await tone(interaction);
             if (interaction.commandName === "Clarify") await clarify(interaction);
+            if (interaction.commandName === "Request Anonymous Clarification") await requestAnonymousClarification(interaction);
         } else {
             console.log(interaction);
         }
