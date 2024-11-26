@@ -4,63 +4,7 @@ import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
 import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers"
-
-export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-    var currentMood = interaction.options.get('currentmood')!.value!.toString();
-    let oldMood = "";
-
-    // Get the old mood from database
-    var dbRef = ref(db);
-    await get(child(dbRef, 'servers/' + interaction.guildId + '/username/' + interaction.user.id)).then((snapshot) => {
-        if (snapshot.exists()) {
-            oldMood = snapshot.val()["mood"]
-        } else {
-          console.log("No data available");
-        }
-      }).catch((error) => {
-        console.error(error);
-    });
-
-    let guild = interaction.guild!;
-    let member = await guild.members.fetch(interaction.user.id);
-
-    // delete the old mood from roles
-    if (interaction.guild?.roles.cache.find(role => role.name === oldMood)) {
-        if (member.roles.cache.find(role => role.name === oldMood)){
-            let oldRole = interaction.guild?.roles.cache.find(role => role.name === oldMood);
-            member.roles.remove(oldRole!);
-        }
-    }
-
-    // set the new mood in database
-    await set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.user.id), {
-        mood: currentMood,
-        timestamp: interaction.createdTimestamp
-    });
-
-    // update new role
-    if (interaction.guild?.roles.cache.find(role => role.name === currentMood)) {
-        let newRole = guild.roles.cache.find((r) => r.name === currentMood);
-        member.roles.add(newRole!);
-    } else {
-        let moodColorHex = await analyzeMoodColor(currentMood);
-        await guild.roles.create({name: currentMood, color: `#${moodColorHex}`})
-        let newRole = guild.roles.cache.find((r) => r.name === currentMood);
-        member.roles.add(newRole!);
-    }
-
-    // Update database with roles
-    await updateOldRoleInServer(interaction, oldMood);
-    await updateNewRoleInServer(interaction, currentMood);
-
-    interaction.reply({
-        ephemeral: true,
-        content: "Thanks for updating your mood!"
-    })
-}
-
 // Example: Add a document to a collection
-
 
 export async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
@@ -115,4 +59,58 @@ export async function clarify(interaction: MessageContextMenuCommandInteraction<
 To help me learn, I was hoping you could clarify the tone of your message.
 Here's a short list of tones: \`<embed>\` (***TODO***)`);
     }
+}
+
+export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    var currentMood = interaction.options.getString('currentmood')!;
+    let oldMood = "";
+
+    // Get the old mood from database
+    var dbRef = ref(db);
+    await get(child(dbRef, 'servers/' + interaction.guildId + '/username/' + interaction.user.id)).then((snapshot) => {
+        if (snapshot.exists()) {
+            oldMood = snapshot.val()["mood"]
+        } else {
+          console.log("No data available");
+        }
+      }).catch((error) => {
+        console.error(error);
+    });
+
+    let guild = interaction.guild!;
+    let member = await guild.members.fetch(interaction.user.id);
+
+    // delete the old mood from roles
+    if (interaction.guild?.roles.cache.find(role => role.name === oldMood)) {
+        if (member.roles.cache.find(role => role.name === oldMood)){
+            let oldRole = interaction.guild?.roles.cache.find(role => role.name === oldMood);
+            member.roles.remove(oldRole!);
+        }
+    }
+
+    // set the new mood in database
+    await set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.user.id), {
+        mood: currentMood,
+        timestamp: interaction.createdTimestamp
+    });
+
+    // update new role
+    if (interaction.guild?.roles.cache.find(role => role.name === currentMood)) {
+        let newRole = guild.roles.cache.find((r) => r.name === currentMood);
+        member.roles.add(newRole!);
+    } else {
+        let moodColorHex = await analyzeMoodColor(currentMood);
+        await guild.roles.create({name: currentMood, color: `#${moodColorHex}`})
+        let newRole = guild.roles.cache.find((r) => r.name === currentMood);
+        member.roles.add(newRole!);
+    }
+
+    // Update database with roles
+    await updateOldRoleInServer(interaction, oldMood);
+    await updateNewRoleInServer(interaction, currentMood);
+
+    interaction.reply({
+        ephemeral: true,
+        content: "Thanks for updating your mood!"
+    })
 }

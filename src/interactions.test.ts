@@ -1,7 +1,7 @@
-import { ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
-import { embed, ping, tone } from "./interactions";
+import { CacheType, ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
+import { embed, ping, tone, mood } from "./interactions";
 import MockDiscord from "./testing/mocks/mockDiscord";
-import analyzeTone from "./gptRequests";
+import { analyzeTone } from "./gptRequests";
 jest.mock("./gptRequests")
 
 describe("Testing slash commands", ()=>{
@@ -44,7 +44,7 @@ describe("Testing slash commands", ()=>{
     });
 
     test("`tone` function defers a reply, then replies with something other than \"Something went wrong.\"", async ()=>{
-        const discord = new MockDiscord({ command: "/ping" });
+        const discord = new MockDiscord({ command: "/tone" });
 
         const message = discord.createMockMessage({
             content: "This is a test message"
@@ -60,4 +60,21 @@ describe("Testing slash commands", ()=>{
         expect(spyDeferReply).toHaveBeenCalled();
         expect(spyEditReply).not.toHaveBeenCalledWith("Something went wrong.");
     });
+
+    test("`mood` function sets the user's mood as a role", async ()=>{
+        const discord = new MockDiscord({ command: "/mood", commandOptions: { currentmood: "happy" } });
+
+        const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+
+        //jest.spyOn(interaction.options, "get")
+
+        expect(interaction.options.getString("currentmood")).toBe("happy");
+
+        await mood(interaction);
+
+        // expect(interaction.guild).toBe("lol");
+
+    });
+
+    
 });
