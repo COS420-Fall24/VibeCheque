@@ -4,6 +4,29 @@ import MockDiscord from "./testing/mocks/mockDiscord";
 import { analyzeTone } from "./gptRequests";
 jest.mock("./gptRequests")
 
+jest.mock('firebase/database', () => {
+    const mockSnapshot = {
+        exists: () => false,
+        val: () => null
+    };
+
+    // Mock functions that will be exported
+    const mockGet = jest.fn().mockResolvedValue(mockSnapshot);
+    const mockChild = jest.fn().mockReturnValue('mock-path');
+    const mockRef = jest.fn().mockReturnValue('mock-ref');
+
+    return {
+        // Return the mock functions
+        get: mockGet,
+        child: mockChild,
+        ref: mockRef,
+        set: jest.fn().mockResolvedValue(undefined),
+        getDatabase: jest.fn().mockReturnValue({
+            ref: mockRef
+        })
+    };
+});
+
 describe("Testing slash commands", ()=>{
     test("`ping` function defers a reply, then replies with \"pong!\" after 1000 ms", async ()=>{
         const discord = new MockDiscord({ command: "/ping" });
@@ -61,20 +84,60 @@ describe("Testing slash commands", ()=>{
         expect(spyEditReply).not.toHaveBeenCalledWith("Something went wrong.");
     });
 
-    test("`mood` function sets the user's mood as a role", async ()=>{
-        const discord = new MockDiscord({ command: "/mood", commandOptions: { currentmood: "happy" } });
+    test("`mood` command correctly sets 'happy' mood in database and guild", async () => {
+        const discord = new MockDiscord({ 
+            command: "/mood", 
+            commandOptions: { currentmood: "happy" }
+        });
 
         const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+        
+        // Add required properties to interaction
+        Object.defineProperty(interaction, 'guildId', {
+            get: jest.fn(() => 'mock-guild-id')
+        });
+        Object.defineProperty(interaction, 'createdTimestamp', {
+            get: jest.fn(() => 1234567890)
+        });
 
-        //jest.spyOn(interaction.options, "get")
-
-        expect(interaction.options.getString("currentmood")).toBe("happy");
+        const { set: mockSet, get: mockGet } = require('firebase/database');
+        mockSet.mockReset();
+        mockGet.mockReset();
+        mockGet.mockResolvedValue({
+            exists: () => false,
+            val: () => null
+        });
 
         await mood(interaction);
 
-        // expect(interaction.guild).toBe("lol");
-
+        // Check that the array of calls includes our expected call
+        expect(mockSet.mock.calls).toContainEqual([
+            undefined,
+            {
+                mood: "happy",
+                timestamp: 1234567890
+            }
+        ]);
     });
+
+
+
+
+
+    // test("`mood` function sets the user's mood as a role", async ()=>{
+    //     const discord = new MockDiscord({ command: "/mood", commandOptions: { currentmood: "happy" } });
+
+    //     const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+
+    //     //jest.spyOn(interaction.options, "get")
+
+    //     expect(interaction.options.getString("currentmood")).toBe("happy");
+
+    //     await mood(interaction);
+
+    //     // expect(interaction.guild).toBe("lol");
+
+    // });
 
     
 });

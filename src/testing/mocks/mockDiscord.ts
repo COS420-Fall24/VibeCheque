@@ -13,7 +13,10 @@ import {
   CacheType,
   CommandInteractionOption,
   UserResolvable,
-  GuildMemberManager
+  GuildMemberManager,
+  Collection,
+  ChatInputCommandInteraction,
+  InteractionReplyOptions
 } from "discord.js";
 
 type MockDiscordOptions = {
@@ -30,14 +33,84 @@ export default class MockDiscord {
     private interactionOptions!: CommandInteractionOption;
     private guild: Guild;
     private guildMember: GuildMember;
+    private roles: Collection<string, any>;
+    private memberRoles: Collection<string, any>;
 
     constructor(options: MockDiscordOptions) {
+        this.memberRoles = new Collection();
+        this.roles = new Collection();
+        
+        // Add default role
+        const defaultRole = { 
+            id: 'happy-role-id', 
+            name: 'happy',
+            color: 0x000000
+        };
+        this.roles.set(defaultRole.id, defaultRole);
+        
         this.mockClient();
         this.user = this.createMockUser(this.client);
-        this.guild = this.createMockGuild(this.client);
-        this.guildMember = this.createMockGuildMember(this.client, this.user, this.guild);
-        this.interaction = this.createMockInteraction(options?.command, options?.commandOptions);
+        
+        // Create guildMember first
+        this.guildMember = {
+            client: this.client,
+            deaf: false,
+            mute: false,
+            self_mute: false,
+            self_deaf: false,
+            session_id: "session-id",
+            channel_id: "channel-id",
+            nick: "nick",
+            user: this.user,
+            roles: {
+                cache: this.memberRoles,
+                add: jest.fn().mockImplementation((role: any) => {
+                    if (typeof role === 'string') {
+                        const roleObj = this.roles.get(role);
+                        if (roleObj) this.memberRoles.set(roleObj.id, roleObj);
+                    } else {
+                        this.memberRoles.set(role.id, role);
+                    }
+                    return Promise.resolve(this.guildMember);
+                }),
+                remove: jest.fn().mockImplementation((role: any) => {
+                    if (typeof role === 'string') {
+                        this.memberRoles.delete(role);
+                    } else {
+                        this.memberRoles.delete(role.id);
+                    }
+                    return Promise.resolve(this.guildMember);
+                })
+            }
+        } as unknown as GuildMember;
 
+        // Then create guild with reference to guildMember
+        this.guild = {
+            client: this.client,
+            id: "guild-id",
+            name: "mock guild",
+            roles: {
+                cache: this.roles,
+                create: jest.fn().mockImplementation((options: any) => {
+                    const newRole = { 
+                        id: `${options.name}-role-id`, 
+                        name: options.name,
+                        color: options.color || 0x000000
+                    };
+                    this.roles.set(newRole.id, newRole);
+                    return Promise.resolve(newRole);
+                })
+            },
+            members: {
+                cache: new Map([[this.user.id, this.guildMember]]),
+                fetch: jest.fn().mockResolvedValue(this.guildMember)
+            }
+        } as unknown as Guild;
+
+        // Set guild reference in guildMember
+        this.guildMember.guild = this.guild;
+
+        this.interaction = this.createMockInteraction(options.command, this.guild, this.guildMember, options.commandOptions);
     }
 
     public getInteraction(): CommandInteraction {
@@ -73,8 +146,20 @@ export default class MockDiscord {
             client: client,
             id: "guild-id",
             name: "mock guild",
-            roles: [],
-            members: this.createMockMembers({} as GuildMemberManager),
+            roles: {
+                cache: this.roles,
+                create: jest.fn().mockImplementation((options: any) => {
+                    const newRole = { id: `${options.name}-role-id`, name: options.name };
+                    this.roles.set(options.name, newRole);
+                    return Promise.resolve(newRole);
+                })
+            },
+            members: {
+                cache: new Map(),
+                fetch: jest.fn().mockImplementation((userId: string) => {
+                    return Promise.resolve(this.guildMember);
+                })
+            },
         } as unknown as Guild
     }
 
@@ -89,30 +174,46 @@ export default class MockDiscord {
             channel_id: "channel-id",
             nick: "nick",
             user: user,
-            roles: [],
+            roles: {
+                cache: this.memberRoles,
+                add: jest.fn().mockImplementation((role) => {
+                    this.memberRoles.set(role.id, role);
+                    return Promise.resolve(this);
+                }),
+                remove: jest.fn().mockImplementation((role) => {
+                    this.memberRoles.delete(role.id);
+                    return Promise.resolve(this);
+                })
+            },
             guild: guild
         } as unknown as GuildMember
     }
 
-    public createMockInteraction(command: string, options?: {}): CommandInteraction {
+    public createMockInteraction(command: string, mockGuild: any, mockMember: any, options: {} = {}): CommandInteraction {
         return {
             client: this.client,
             user: this.user,
-            guild: this.guild,
+            guild: mockGuild,
             data: command,
             options: this.createMockOptions(options ? options : {}),
             id: BigInt(1),
-            // reply: jest.fn((text: string) => this.interactionReply = text),
+            reply: jest.fn((replyOptions: string | MessagePayload | InteractionReplyOptions) => {
+                this.interactionReply = replyOptions;
+                return Promise.resolve();
+            }),
             deferReply: jest.fn(),
-            editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => this.interactionReply = reply), 
-            // fetchReply: jest.fn(),
-            isRepliable: jest.fn(() => true)
+            editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => {
+                this.interactionReply = reply;
+                return Promise.resolve();
+            }), 
+            isRepliable: jest.fn(() => true),
+            member: mockMember
         } as unknown as CommandInteraction;
     }
 
     public createMockMessageCommand(command: string, message: Message): MessageContextMenuCommandInteraction {
         return {
-            ...this.createMockInteraction(command),
+            ...this.createMockInteraction(command, this.guild, this.guildMember),
             targetMessage: message,
             isMessageContextMenuCommand: jest.fn(() => true)
         } as unknown as MessageContextMenuCommandInteraction
