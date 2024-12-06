@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { REST, Routes } from "discord.js";
+import { ApplicationCommandOptionType, REST, Routes } from "discord.js";
 
 declare type command = {
     name: string;
@@ -20,8 +20,6 @@ export async function updateCommands(commands: command[]): Promise<void> {
         process.env.DISCORD_TOKEN as string,
     );
 
-    console.log(rest);
-
     try {
         console.log("refreshing commands");
 
@@ -36,27 +34,43 @@ export async function updateCommands(commands: command[]): Promise<void> {
         throw error;
     }
 }
+
 export async function main(): Promise<void> {
-    return updateCommands([
+    await exports.updateCommands([
         {
-            name: "ping",
-            description: 'test bot and return "pong"',
-            type: 1,
-        },
-        {
-            name: "embed",
-            description: "test embed feature of discord",
-            type: 1,
-        },
-        {
-            name: "Tone",
-            type: 3,
-        },
-        {
-            name: "Clarify",
-            type: 3,
-        },
+        name: "ping",
+        description: 'test bot and return "pong"',
+        type: 1,
+    },
+    {
+        name: "mood",
+        description: "Sets the user's current mood",
+        options: [
+            {
+                name: "currentmood",
+                description: "The mood to be set",
+                type: ApplicationCommandOptionType.String,
+                required: true
+            }
+        ],
+        type: 1
+    },
+    {
+        name: "embed",
+        description: "test embed feature of discord",
+        type: 1,
+    },
+    {
+        name: "Tone",
+        type: 3,
+    },
+    {
+        name: "Clarify",
+        type: 3,
+    },
+    {
+        name:"Request Anonymous Clarification",
+        type: 3,
+        }
     ]);
 }
-
-main();

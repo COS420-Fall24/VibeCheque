@@ -3,24 +3,26 @@ import { RESTOptions } from "discord.js";
 const discordJS = jest.requireActual<typeof import("discord.js")>("discord.js");
 const mockDiscordJS = jest.createMockFromModule<typeof import("discord.js")>("discord.js");
 
-const asyncJestFn = (): jest.Mock => jest.fn(async () => {});
-
 mockDiscordJS.EmbedBuilder = discordJS.EmbedBuilder;
+mockDiscordJS.ApplicationCommandOptionType = discordJS.ApplicationCommandOptionType;
 
 Object.defineProperty(mockDiscordJS, "Routes", {
     writable: true,
     value: { ...discordJS.Routes }
 });
 
-// @ts-ignore
-mockDiscordJS.REST = jest.fn().mockImplementation((options?: RESTOptions) => {
-    return {
-        put: asyncJestFn(),
-        setToken: jest.fn().mockReturnThis()
-    };
-});
+class MockREST extends discordJS.REST {
+    put: jest.Mock;
+    setToken: jest.Mock;
 
-mockDiscordJS.REST.prototype.put = asyncJestFn();
-mockDiscordJS.REST.prototype.setToken = jest.fn().mockReturnThis();
+    constructor(options?: RESTOptions) {
+        super(options);
+        this.put = jest.fn().mockResolvedValue({});
+        this.setToken = jest.fn().mockReturnThis();
+    }
+}
+
+// @ts-ignore
+mockDiscordJS.REST = MockREST;
 
 module.exports = mockDiscordJS;
