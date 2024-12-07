@@ -1,7 +1,7 @@
 import "dotenv/config";
 import analyzeTone from "./gptRequests";
 import { Client, GatewayIntentBits, Events, ClientUser } from "discord.js";
-import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
+import { clarify, embed, ping, tone, requestAnonymousClarification, /*mood*/ } from "./interactions"
 
 // define a bunch of emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
