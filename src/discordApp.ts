@@ -1,5 +1,5 @@
 import "dotenv/config";
-import analyzeTone from "./gptRequests";
+import { analyzeTone }  from "./gptRequests";
 import { Client, GatewayIntentBits, Events, ClientUser } from "discord.js";
 import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
 
