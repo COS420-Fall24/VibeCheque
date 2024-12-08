@@ -87,4 +87,8 @@ updateCommands([
         name: "Clarify",
         type: 3,
     },
+    {
+        name: "In-Depth Clarification",
+        type: 3,
+    }
 ]);

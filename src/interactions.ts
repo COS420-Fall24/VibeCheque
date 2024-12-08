@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, 
     ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageContextMenuCommandInteraction, 
     SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "discord.js";
-import analyzeTone from "./gptRequests";
+import { analyzeTone, emojiRepresentation, explanationOfTone } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
 //getTones and Clarify rely on toneJSON. Implementing it in firebase would be better
@@ -200,7 +200,58 @@ export async function action(interaction: ChatInputCommandInteraction<CacheType>
     });
 }
 
+//This should be an application command (need to select message to add tone to)
+//This kinda adds tone, but it's super lame as it's only a reaction
+export async function postemptiveToneAdd(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply();
+
+    //copy-paste select menu for tones:
+    //create the tone menu which allows a user to select 1-5 tones
+    const toneMenu = new StringSelectMenuBuilder()
+        .setCustomId('tone select menu')
+        .setPlaceholder('Select a tone')
+        .setMinValues(1)
+        .setMaxValues(5);
+
+    //For each tone in toneJson.tones, we create a new option for our tone menu
+    toneJSON.tones.forEach((tone: Tone) => {
+        toneMenu.addOptions(
+            new StringSelectMenuOptionBuilder()
+                .setValue(`${tone.name} (${tone.indicator})`)
+                .setLabel(`${tone.name}: ${tone.indicator}`)
+                .setDescription(`${tone.description}`),
+        );
+    });
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+        .addComponents(toneMenu);
+
+    //await the promise and edit the reply with the following
+    //row is the actionRow which hold the select menu
+    const response = await interaction.editReply({
+        content: 'Here is a list of tones: ',
+        components: [row],
+    });
+
+    //creates a filter that only allows the user who sent the interaction to edit it
+    //Need to make sure the author is the only one who can add tones
+    const collectorFilter = (i: {user: {id: string}; }) => i.user.id === interaction.targetMessage.author.id;
+
+    //creates a collector with the filter above that times out in three minutes
+    const collector = response.createMessageComponentCollector({ filter: collectorFilter, componentType: ComponentType.StringSelect, time: 180_000});
+
+    //edit the reply to say what the user selected
+    collector.on('collect', async i => {
+        const selection = i.values;
+        //rather than form a reply, the bot should try to edit the user's message
+        //TODO: make selection a string instead of a string[] using map/filter
+        selection.forEach(async (currentValue: string) => {interaction.targetMessage.react(await emojiRepresentation(currentValue));});
+        await response.delete();
+    });
+}
+
 //A function which creates a select menu from the elements in tones.json for users to select
+//This already covers the preexisting tone add
 export async function getTones(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
 
@@ -256,6 +307,19 @@ export async function tone(interaction: MessageContextMenuCommandInteraction<Cac
         interaction.editReply("Something went wrong.");
         console.error(error);
     }
+}
+
+//pop-out description cannot be done with discord's UI
+//Cannot edit tones because of discord's UI
+//The closest thing I can make to a pop-out description is an app command
+//Maybe it should be like clarify but includes the message fragment, its tone, and an explanation
+//The problem is it should be a pop-out for user convenience, this is NOT that. Something is better than nothing
+export async function inDepthClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
+    //is this seriously all?
+    interaction.reply({
+        ephemeral: true,
+        content: await explanationOfTone(interaction.targetMessage.content)
+    });
 }
 
 export async function clarify(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
