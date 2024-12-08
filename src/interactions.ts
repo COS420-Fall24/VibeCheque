@@ -187,6 +187,16 @@ async function processQueue(interaction: MessageContextMenuCommandInteraction<Ca
     if (unclarifiedRequests.length === 1) {
         const singleRequest = unclarifiedRequests[0];
         await clarifier.send(`You have a pending clarification request for the message: "${singleRequest.content}". Please provide your clarification.`);
+   
+        const filter = (response: Message) =>
+            response.author.id === clarifier.id && response.channel instanceof DMChannel;
+        const clarificationCollector = clarifier.dmChannel?.createMessageCollector({filter, max: 1});
+
+        clarificationCollector?.on("collect", async (message) =>{
+            await handleClarification(interaction, clarificationQueue, singleRequest, message);
+            clarificationCollector.stop();
+        });
+   
     } 
     // Multiple request scenario
     else {
