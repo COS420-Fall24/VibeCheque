@@ -117,6 +117,12 @@ To help me learn, I was hoping you could clarify the tone of your message.
 Here's a short list of tones: \`<embed>\` (***TODO***)`);
     }
 }
+
+
+
+
+
+
 //request anonymous clarification function
 export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
     await interaction.deferReply({ephemeral: true});
