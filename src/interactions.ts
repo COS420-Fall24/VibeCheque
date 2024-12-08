@@ -124,206 +124,6 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`);
 
 
 //request anonymous clarification function - updating to include a queue of clarification requests
-export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
-    await interaction.deferReply({ephemeral: true});
-
-    try {
-        const targetMessage = interaction.targetMessage;
-
-        if(targetMessage){ 
-            const messageContent = targetMessage.content;
-            //Send an anonymous request to user of message
-            await targetMessage.author.send(`You've received an anonymous request for clarification on your message: "${targetMessage.content}". Will you clarify your tone?`);
-            //Let the user who requested clarification know that the message sent
-            await interaction.editReply({
-                //ephemeral: true,
-                content: "Your request for anonymous clarification has been sent.",
-                
-            });
-
-            const clarificationRequest = {
-                messageId: targetMessage.id,
-                requesterId: interaction.user.id,
-                clarifierId: targetMessage.author.id,
-                content: messageContent,
-                isClarified: false
-            };
-
-            const clarificationQueue = getClarificationQueue(targetMessage.author.id); 
-            clarificationQueue.push(clarificationRequest);
-
-            await processQueue(interaction, clarificationQueue);
-
-
-
-
-        }
-
-
-
-
-    } catch(error){
-        console.error("Error handling anonymous clarification request: ", error);
-        await interaction.editReply({
-            //ephemeral: true,
-            content: "There was an error handling the clarification request",
-        });
-    }
-}
-
-
-
-async function notifyClarifier(client: Client, clarifierId: string, clarificationQueue: any[]){
-    const clarifier = await client.users.fetch(clarifierId);
-    const unclarifiedRequests = clarificationQueue.filter(request => !request.isClarified);
-
-    if(unclarifiedRequests.length === 1){
-        const singleRequest = unclarifiedRequests[0];
-        //await clarifier.send(`You have a pending clarification request for the message: "${singleRequest.content}". Please clarify by responding to this message.`);
-
-    }else if (unclarifiedRequests.length > 1){
-        let clarificationMessage = "You have the following pending clarification requests:\n";
-        unclarifiedRequests.forEach((request, index) => {
-            clarificationMessage += `${index + 1}. Message: "${request.content}"\n`;
-
-    });
-
-    clarificationMessage += "\nReply with the number of the message you'd like to clarify.";
-    await clarifier.send(clarificationMessage);
-
-
-    }
-
-
-}
-
-//function to go through the queue 
-async function processQueue(interaction: MessageContextMenuCommandInteraction<CacheType>, clarificationQueue: any[]) {
-    // Filter out already clarified requests
-    let unclarifiedRequests = clarificationQueue.filter(request => !request.isClarified);
-
-    // If no unclarified requests remain, exit
-    if (unclarifiedRequests.length === 0) return;
-
-    const clarifier = await interaction.client.users.fetch(unclarifiedRequests[0].clarifierId);
-
-    // Single request scenario
-    if (unclarifiedRequests.length === 1) {
-        const singleRequest = unclarifiedRequests[0];
-        await clarifier.send(`You have a pending clarification request for the message: "${singleRequest.content}". Please provide your clarification.`);
-
-        // Wait for a single clarification message
-        try {
-            const collectedMessages = await clarifier.dmChannel?.awaitMessages({
-                max: 1,
-                time: 60000,
-                filter: (m) => m.author.id === clarifier.id
-            });
-
-            if (collectedMessages && collectedMessages.size > 0) {
-                const clarificationResponse = collectedMessages.first();
-                if (clarificationResponse) {
-                    await handleClarificationResponse(
-                        interaction, 
-                        clarificationQueue, 
-                        singleRequest, 
-                        clarificationResponse
-                    );
-                }
-            }
-        } catch (error) {
-            console.error("Error collecting clarification:", error);
-        }
-    } 
-    // Multiple request scenario
-    else {
-        // List out unclarified requests
-        let clarificationMessage = "You have the following pending clarification requests:\n";
-        unclarifiedRequests.forEach((request, index) => {
-            clarificationMessage += `${index + 1}. Message: "${request.content}"\n`;
-        });
-        clarificationMessage += "\nReply with the number of the message you'd like to clarify.";
-        await clarifier.send(clarificationMessage);
-
-        // Wait for selection message
-        try {
-            const selectionMessages = await clarifier.dmChannel?.awaitMessages({
-                max: 1,
-                time: 60000,
-                filter: (m) => m.author.id === clarifier.id
-            });
-
-            if (selectionMessages && selectionMessages.size > 0) {
-                const selectionResponse = selectionMessages.first();
-                if (selectionResponse) {
-                    const selectedNumber = parseInt(selectionResponse.content, 10);
-
-                    if (isNaN(selectedNumber) || selectedNumber < 1 || selectedNumber > unclarifiedRequests.length) {
-                        await clarifier.send("Invalid selection. Please try again.");
-                        return;
-                    }
-
-                    const selectedRequest = unclarifiedRequests[selectedNumber - 1];
-                    await clarifier.send(`You selected message: "${selectedRequest.content}". Please reply with your clarification now.`);
-
-                    // Wait for clarification message
-                    const clarificationMessages = await clarifier.dmChannel?.awaitMessages({
-                        max: 1,
-                        time: 60000,
-                        filter: (m) => m.author.id === clarifier.id
-                    });
-
-                    if (clarificationMessages && clarificationMessages.size > 0) {
-                        const clarificationResponse = clarificationMessages.first();
-                        if (clarificationResponse) {
-                            await handleClarificationResponse(
-                                interaction, 
-                                clarificationQueue, 
-                                selectedRequest, 
-                                clarificationResponse
-                            );
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Error processing clarification request:", error);
-        }
-    }
-}
-
-async function handleClarificationResponse(
-    interaction: MessageContextMenuCommandInteraction<CacheType>, 
-    clarificationQueue: any[], 
-    selectedRequest: any, 
-    clarificationResponse: Message
-) {
-    // Perform tone analysis
-    const toneAnalysis = await analyzeTone(clarificationResponse.content);
-    const finalTone = toneAnalysis || "Neutral";
-
-    const requester = await interaction.client.users.fetch(selectedRequest.requesterId);
-
-    // Notify the requester about the clarification result
-    await requester.send(`Requested Tone Clarification for message "${selectedRequest.content}": "${finalTone}"`);
-
-    // Mark the specific request as clarified
-    selectedRequest.isClarified = true;
-    await interaction.client.users.send(selectedRequest.clarifierId, "Thank you! The clarification has been submitted.");
-
-    // Remove the clarified request from the queue
-    const index = clarificationQueue.findIndex(req => req.messageId === selectedRequest.messageId);
-    if (index !== -1) {
-        clarificationQueue.splice(index, 1);
-    }
-
-    // Recursively process remaining requests
-    await processQueue(interaction, clarificationQueue);
-}
-
-
-
-// Clarification queue store
 const clarificationQueueStore: { [key: string]: any[] } = {};
 
 // Function to get or initialize the queue for a user
@@ -332,4 +132,125 @@ function getClarificationQueue(userId: string): any[] {
         clarificationQueueStore[userId] = [];
     }
     return clarificationQueueStore[userId];
+}
+
+export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply({ephemeral: true});
+
+    try {
+        const targetMessage = interaction.targetMessage;
+
+        if(targetMessage){ 
+            const messageContent = targetMessage.content;
+            
+            // Check if this exact message is already in the queue
+            const clarificationQueue = getClarificationQueue(targetMessage.author.id);
+            const existingRequest = clarificationQueue.find(req => 
+                req.messageId === targetMessage.id && !req.isClarified
+            );
+
+            // Only add if not already in queue
+            if (!existingRequest) {
+                const clarificationRequest = {
+                    messageId: targetMessage.id,
+                    requesterId: interaction.user.id,
+                    clarifierId: targetMessage.author.id,
+                    content: messageContent,
+                    isClarified: false
+                };
+
+                clarificationQueue.push(clarificationRequest);
+            }
+
+            await processQueue(interaction, clarificationQueue);
+        }
+    } catch(error) {
+        console.error("Error handling anonymous clarification request: ", error);
+        await interaction.editReply({
+            content: "There was an error handling the clarification request",
+        });
+    }
+}
+
+async function processQueue(interaction: MessageContextMenuCommandInteraction<CacheType>, clarificationQueue: any[]) {
+    const unclarifiedRequests = clarificationQueue.filter(request => !request.isClarified);
+
+    // If no unclarified requests, clear the queue and exit
+    if (unclarifiedRequests.length === 0) {
+        clarificationQueue.length = 0;
+        return;
+    }
+
+    const clarifier = await interaction.client.users.fetch(unclarifiedRequests[0].clarifierId);
+
+    // Single request scenario
+    if (unclarifiedRequests.length === 1) {
+        const singleRequest = unclarifiedRequests[0];
+        await clarifier.send(`You have a pending clarification request for the message: "${singleRequest.content}". Please provide your clarification.`);
+    } 
+    // Multiple request scenario
+    else {
+        let clarificationMessage = "You have the following pending clarification requests:\n";
+        unclarifiedRequests.forEach((request, index) => {
+            clarificationMessage += `${index + 1}. Message: "${request.content}"\n`;
+        });
+        clarificationMessage += "\nReply with the number of the message you'd like to clarify.";
+        await clarifier.send(clarificationMessage);
+    }
+
+    // Create a collector for the clarifier's response
+    const filter = (response: Message) => 
+        response.author.id === clarifier.id && response.channel instanceof DMChannel;
+
+    const collector = clarifier.dmChannel?.createMessageCollector({ filter });
+
+    collector?.on('collect', async (message) => {
+        const selectedNumber = parseInt(message.content, 10);
+
+        if (!isNaN(selectedNumber) && selectedNumber > 0 && selectedNumber <= unclarifiedRequests.length) {
+            const selectedRequest = unclarifiedRequests[selectedNumber - 1];
+            await clarifier.send(`You selected message: "${selectedRequest.content}". Please reply with your clarification now.`);
+
+            // Create a new collector for the clarification message
+            const clarificationCollector = clarifier.dmChannel?.createMessageCollector({ 
+                filter, 
+                max: 1 
+            });
+
+            clarificationCollector?.on('collect', async (clarificationMessage) => {
+                await handleClarification(interaction, clarificationQueue, selectedRequest, clarificationMessage);
+                clarificationCollector.stop(); // Stop the clarification collector
+                collector.stop(); // Stop the initial collector
+            });
+        }
+    });
+}
+
+async function handleClarification(
+    interaction: MessageContextMenuCommandInteraction<CacheType>, 
+    clarificationQueue: any[], 
+    request: any, 
+    clarificationMessage: Message
+) {
+    // Perform tone analysis
+    const toneAnalysis = await analyzeTone(clarificationMessage.content);
+    const finalTone = toneAnalysis || "Neutral";
+
+    const requester = await interaction.client.users.fetch(request.requesterId);
+
+    // Notify the requester about the clarification result
+    await requester.send(`Requested Tone Clarification for message "${request.content}": "${finalTone}"`);
+
+    // Mark the request as clarified
+    request.isClarified = true;
+    await interaction.client.users.send(request.clarifierId, "Thank you! The clarification has been submitted.");
+
+    // Remove the clarified request from the queue
+    const index = clarificationQueue.findIndex(req => req.messageId === request.messageId);
+    if (index !== -1) {
+        clarificationQueue.splice(index, 1);
+    }
+
+    // Process remaining unclarified requests
+    await processQueue(interaction, clarificationQueue);
 }
