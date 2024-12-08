@@ -70,8 +70,6 @@ describe("Testing slash commands", ()=>{
         const embed1 = (message.embeds![0] as EmbedBuilder);
         const embed2 = (message.embeds![1] as EmbedBuilder);
 
-        console.log(embed1.data);
-
         expect(embed1.data.title!).toMatch(/Purple Embed/);
         expect(embed2.data.title!).toMatch(/Green Embed/);
     });
