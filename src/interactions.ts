@@ -1,4 +1,4 @@
-import { CacheType, ChatInputCommandInteraction, EmbedBuilder, 
+import { Client, CacheType, ChatInputCommandInteraction, EmbedBuilder, 
     MessageContextMenuCommandInteraction, SlashCommandBuilder } from "discord.js";
 import analyzeTone from "./gptRequests";
 //import db from './firebase'; // Import from your firebase.ts file
@@ -131,6 +131,7 @@ export async function requestAnonymousClarification(interaction: MessageContextM
         const targetMessage = interaction.targetMessage;
 
         if(targetMessage){ 
+            const messageContent = targetMessage.content;
             //Send an anonymous request to user of message
             await targetMessage.author.send(`You've received an anonymous request for clarification on your message: "${targetMessage.content}". Will you clarify your tone?`);
             //Let the user who requested clarification know that the message sent
@@ -144,10 +145,11 @@ export async function requestAnonymousClarification(interaction: MessageContextM
                 messageId: targetMessage.id,
                 requesterId: interaction.user.id,
                 clarifierId: targetMessage.author.id,
+                content: messageContent,
                 isClarified: false
             };
 
-            const clarificationQueue = getClarificationQueue(interaction.user.id); //function doesn't exist yet
+            const clarificationQueue = getClarificationQueue(targetMessage.author.id); //function doesn't exist yet
             clarificationQueue.push(clarificationRequest);
 
             await processQueue(interaction, clarificationQueue);
@@ -171,44 +173,44 @@ export async function requestAnonymousClarification(interaction: MessageContextM
 
 
 
-async function notifyClarifier(interaction: MessageContextMenuCommandInteraction<CacheType>, clarificationQueue: any[]){
-    const clarifier = await interaction.client.users.fetch(clarificationQueue[0].clarifierId);
+async function notifyClarifier(client: Client, clarifierId: string, clarificationQueue: any[]){
+    const clarifier = await client.users.fetch(clarifierId);
 
-    //Creating a message with all pending clarification requests
-    let clarificationMessage = "You have the following pending clarfication requests:\n"
-    clarificationQueue.forEach((request, index)=> {
-        clarificationMessage += `${index + 1}. Message: "${request.messageId}"\n`;    
+    let clarificationMessage = "You have the following pending clarification requests:\n";
+    clarificationQueue.forEach((request, index) => {
+        clarificationMessage += `${index + 1}. Message: "${request.content}" (ID: ${request.messageId})\n`;
     });
-    
+
     await clarifier.send(clarificationMessage);
 }
 
 //function to go through the queue 
 async function processQueue(interaction: MessageContextMenuCommandInteraction<CacheType>, clarificationQueue: any[]) {
-    for(const currentRequest of clarificationQueue){
-        if (!currentRequest.isClarified){
-            
+    const unclarifiedRequests = clarificationQueue.filter(request => !request.isClarified);
 
-            const clarifier = await interaction.client.users.fetch(currentRequest.clarifierId);
-            await clarifier.send(`Please clarify the tone of the following message: "${currentRequest.messageId}"`);
+    if (unclarifiedRequests.length > 0) {
+        await notifyClarifier(interaction.client, unclarifiedRequests[0].clarifierId, unclarifiedRequests);
+    }
 
-            //Collects messages 
+    for (const currentRequest of unclarifiedRequests) {
+        const clarifier = await interaction.client.users.fetch(currentRequest.clarifierId);
+        const filter = (response: any) =>
+            response.author.id === clarifier.id && response.channelId === clarifier.dmChannel?.id;
 
-            const filter = (response: any) => response.author.id === clarifier.id && response.channelId === clarifier.dmChannel?.id;
-            const collector = clarifier.dmChannel?.createMessageCollector({filter});//getting rid of time limit for now - good idea?
+        const collector = clarifier.dmChannel?.createMessageCollector({ filter });
 
-            collector?.on("collect", async(clarificationMessage)=> {
-                //bot will analyze the response 
-                const toneAnalysis = await analyzeTone(clarificationMessage.content);
+        collector?.on("collect", async (clarificationMessage) => {
+            if (currentRequest.isClarified) return;
 
-                //send analyzed tone back to the requester
-                const requester = await interaction.client.users.fetch(currentRequest.requesterId);
-                await requester.send(`Requested Tone Clarifcation for message " ${currentRequest.messageId}": "${toneAnalysis}"`);
+            const toneAnalysis = await analyzeTone(clarificationMessage.content);
+            const requester = await interaction.client.users.fetch(currentRequest.requesterId);
 
-                //Mark this request as true
-                currentRequest.isClarified = true;
+            await requester.send(
+                `Requested Tone Clarifcation for message "${currentRequest.messageId}": "${toneAnalysis}"`
+            );
 
-                collector.stop();
+            currentRequest.isClarified = true;
+            collector.stop();
 
 
         });
@@ -216,7 +218,7 @@ async function processQueue(interaction: MessageContextMenuCommandInteraction<Ca
 
     }
 }
-}
+
 
 function getClarificationQueue(userId: string): any[]{
     if(!clarificationQueueStore[userId]){
