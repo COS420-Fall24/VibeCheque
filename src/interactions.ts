@@ -80,6 +80,7 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
     let guild = interaction.guild!;
     let member = await guild.members.fetch(interaction.user.id);
 
+
     // delete the old mood from roles
     if (interaction.guild?.roles.cache.find(role => role.name === oldMood)) {
         if (member.roles.cache.find(role => role.name === oldMood)){

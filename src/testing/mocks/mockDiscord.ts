@@ -40,14 +40,6 @@ export default class MockDiscord {
         this.memberRoles = new Collection();
         this.roles = new Collection();
         
-        // Add default role
-        const defaultRole = { 
-            id: 'happy-role-id', 
-            name: 'happy',
-            color: 0x000000
-        };
-        this.roles.set(defaultRole.id, defaultRole);
-        
         this.mockClient();
         this.user = this.createMockUser(this.client);
         
@@ -60,14 +52,24 @@ export default class MockDiscord {
             self_deaf: false,
             session_id: "session-id",
             channel_id: "channel-id",
-            nick: "nick",
+            nickname: "nick",
             user: this.user,
             roles: {
                 cache: this.memberRoles,
                 add: jest.fn().mockImplementation((role: any) => {
                     if (typeof role === 'string') {
                         const roleObj = this.roles.get(role);
-                        if (roleObj) this.memberRoles.set(roleObj.id, roleObj);
+                        if (roleObj) {
+                            this.memberRoles.set(roleObj.id, roleObj)
+                        } else {
+                            const newRole = { 
+                                id: `${role}-role-id`, 
+                                name: role,
+                                color: 0x000000
+                            }
+                            this.guild.roles.create(newRole);
+                            this.memberRoles.set(role, newRole)
+                        }             
                     } else {
                         this.memberRoles.set(role.id, role);
                     }
@@ -77,7 +79,11 @@ export default class MockDiscord {
                     if (typeof role === 'string') {
                         this.memberRoles.delete(role);
                     } else {
-                        this.memberRoles.delete(role.id);
+                        this.memberRoles.forEach((value, key) => {
+                            if (value.id === role.id) {
+                                this.memberRoles.delete(key);
+                            }
+                        });
                     }
                     return Promise.resolve(this.guildMember);
                 })
@@ -92,12 +98,14 @@ export default class MockDiscord {
             roles: {
                 cache: this.roles,
                 create: jest.fn().mockImplementation((options: any) => {
+                    // console.log("create role called with options: " + options.name + " " + options.color);
                     const newRole = { 
                         id: `${options.name}-role-id`, 
                         name: options.name,
                         color: options.color || 0x000000
                     };
                     this.roles.set(newRole.id, newRole);
+                    // console.log("found role:", JSON.stringify(this.roles.find(role => role.name === "happy")));
                     return Promise.resolve(newRole);
                 })
             },
@@ -241,4 +249,22 @@ export default class MockDiscord {
             fetch: jest.fn((user: UserResolvable) => (members as any)[user.toString()])
         } as unknown as GuildMemberManager;
     }
+
+    public addRoleToMember(role: string): void {
+        this.guildMember.roles.add(role);
+    }
+
+    public addRoleToGuild(role: string, moodColorHex: string): void {
+        this.guild.roles.create({name: role, color: `#${moodColorHex}`})
+    }
+
+    public getMemberRoles(): Collection<string, any> {
+        return this.memberRoles;
+    }
+
+    public getRoles(): Collection<string, any> {
+        return this.roles;
+    }
+
+    
 }
