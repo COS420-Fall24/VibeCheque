@@ -1,4 +1,4 @@
-import { Client, CacheType, ChatInputCommandInteraction, EmbedBuilder, 
+import { Client, Message, CacheType, ChatInputCommandInteraction, EmbedBuilder, 
     MessageContextMenuCommandInteraction, SlashCommandBuilder } from "discord.js";
 import analyzeTone from "./gptRequests";
 //import db from './firebase'; // Import from your firebase.ts file
@@ -198,55 +198,54 @@ async function notifyClarifier(client: Client, clarifierId: string, clarificatio
 
 //function to go through the queue 
 async function processQueue(interaction: MessageContextMenuCommandInteraction<CacheType>, clarificationQueue: any[]) {
-    const unclarifiedRequests = clarificationQueue.filter(request => !request.isClarified);
+    const unclarifiedRequests = clarificationQueue.filter((request) => !request.isClarified);
 
     if (unclarifiedRequests.length > 0) {
         await notifyClarifier(interaction.client, unclarifiedRequests[0].clarifierId, unclarifiedRequests);
-    }
 
-    const clarifier = await interaction.client.users.fetch(unclarifiedRequests[0].clarifierId);
-    const filter = (response: any) =>
-        response.author.id === clarifier.id && response.channelId === clarifier.dmChannel?.id;
-
-    const collector = clarifier.dmChannel?.createMessageCollector({ filter });
-
-    collector?.on("collect", async (clarificationMessage) => {
-        const selectedNumber = parseInt(clarificationMessage.content, 10);
-
-        if (isNaN(selectedNumber) || selectedNumber < 1 || selectedNumber > unclarifiedRequests.length) {
-            await clarifier.send("Invalid selection. Please reply with the number corresponding to the message you'd like to clarify.");
-            return;
-        }
-
-        const selectedRequest = unclarifiedRequests[selectedNumber - 1];
-
-        await clarifier.send(`You selected message: "${selectedRequest.content}". Please reply with your clarification.`);
-        const clarificationFilter = (response: any) =>
+        const clarifier = await interaction.client.users.fetch(unclarifiedRequests[0].clarifierId);
+        const clarificationFilter = (response: Message) =>
             response.author.id === clarifier.id && response.channelId === clarifier.dmChannel?.id;
 
-        const clarificationCollector = clarifier.dmChannel?.createMessageCollector({ clarificationFilter });
+        const collector = clarifier.dmChannel?.createMessageCollector({ filter: clarificationFilter });
 
-        clarificationCollector?.on("collect", async (clarificationResponse) => {
-            if (selectedRequest.isClarified) return;
+        collector?.on("collect", async (clarificationMessage) => {
+            const selectedNumber = parseInt(clarificationMessage.content, 10);
 
-            const toneAnalysis = await analyzeTone(clarificationResponse.content);
-            const requester = await interaction.client.users.fetch(selectedRequest.requesterId);
-
-            await requester.send(
-                `Requested Tone Clarification for message "${selectedRequest.messageId}": "${toneAnalysis}"`
-            );
-
-            selectedRequest.isClarified = true;
-            clarificationQueue.splice(clarificationQueue.indexOf(selectedRequest), 1); // Remove clarified request
-
-            // Notify clarifier of updated queue if there are still pending requests
-            if (clarificationQueue.length > 0) {
-                await notifyClarifier(interaction.client, clarifier.id, clarificationQueue);
-            } else {
-                await clarifier.send("All pending clarification requests have been addressed. Thank you!");
+            if (isNaN(selectedNumber) || selectedNumber < 1 || selectedNumber > unclarifiedRequests.length) {
+                await clarifier.send("Invalid selection. Please reply with the number corresponding to the message you'd like to clarify.");
+                return;
             }
 
-            clarificationCollector.stop();
+            const selectedRequest = unclarifiedRequests[selectedNumber - 1];
+
+            await clarifier.send(`You selected message: "${selectedRequest.content}". Please reply with your clarification.`);
+            const clarificationCollector = clarifier.dmChannel?.createMessageCollector({ filter: clarificationFilter });
+
+            clarificationCollector?.on("collect", async (clarificationResponse) => {
+                if (selectedRequest.isClarified) return;
+
+                const toneAnalysis = await analyzeTone(clarificationResponse.content);
+                const requester = await interaction.client.users.fetch(selectedRequest.requesterId);
+
+                await requester.send(
+                    `Requested Tone Clarification for message "${selectedRequest.messageId}": "${toneAnalysis}"`
+                );
+
+                selectedRequest.isClarified = true;
+                clarificationQueue.splice(clarificationQueue.indexOf(selectedRequest), 1);
+
+                // Notify clarifier of updated queue if there are still pending requests
+                if (clarificationQueue.length > 0) {
+                    await notifyClarifier(interaction.client, clarifier.id, clarificationQueue);
+                } else {
+                    await clarifier.send("All pending clarification requests have been addressed. Thank you!");
+                }
+
+                clarificationCollector.stop();
+            });
+
+            collector.stop();
 
 
         });
@@ -254,7 +253,6 @@ async function processQueue(interaction: MessageContextMenuCommandInteraction<Ca
 
     }
 }
-
 
 function getClarificationQueue(userId: string): any[]{
     if(!clarificationQueueStore[userId]){
