@@ -115,3 +115,27 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
         content: "Thanks for updating your mood!"
     })
 }
+//request anonymous clarification function
+export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
+    await interaction.deferReply();
+
+    try {
+        const targetMessage = interaction.targetMessage;
+
+        if(targetMessage){
+            await targetMessage.author.send(`You've received an anonymous request for clarification on your message: "${targetMessage.content}". Will you clarify your tone?`);
+
+            await interaction.reply({
+                ephemeral: true,
+                content: "Your request for anonymous clarification has been sent.",
+                
+            });
+        }
+    } catch(error){
+        console.error("Error handling anonymous clarification request: ", error);
+        await interaction.reply({
+            ephemeral: true,
+            content: "There was an error handling the clarification request",
+        });
+    }
+}
