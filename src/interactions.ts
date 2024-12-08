@@ -154,30 +154,6 @@ export async function requestAnonymousClarification(interaction: MessageContextM
 
 
 
-                    //This will probably all be deleted code  - leave for now
-
-            //Bot waits for the message - 60 seconds. Maybe longer or shorter? no idea
-        //     const filter = (response: any) => response.author.id === targetMessage.author.id && response.channelId === targetMessage.author.dmChannel?.id;
-        //     const collector = targetMessage.author.dmChannel?.createMessageCollector({filter, time: 60000});
-
-        //     collector?.on("collect", async (clarificationMessage) => {
-        //         //This analyzes the response
-        //         const toneAnalysis = await analyzeTone(clarificationMessage.content)
-        //         //send the analyzed tone back to requester
-        //         await interaction.user.send(`Requested Tone Clarification: "${toneAnalysis}"`);
-
-        //         //stops the collector 
-        //         collector.stop();
-
-        //     });
-
-        //     //If the user doesn't respond in time, this will run
-        //     collector?.on("end", async (collected, reason)=> {
-        //         if (reason === "time"){
-        //             await interaction.user.send("The user did not respond in time.")//We can maybe change the time, and how this works later
-        //         }
-        //     });
-
 
         }
 
@@ -209,30 +185,44 @@ async function notifyClarifier(interaction: MessageContextMenuCommandInteraction
 
 //function to go through the queue 
 async function processQueue(interaction: MessageContextMenuCommandInteraction<CacheType>, clarificationQueue: any[]) {
-    if (clarificationQueue.length > 0){
-        const currentRequest = clarificationQueue[0];
+    for(const currentRequest of clarificationQueue){
+        if (!currentRequest.isClarified){
+            
 
-        const clarifier = await interaction.client.users.fetch(currentRequest.clarifierId);
-        await clarifier.send(`Please clarify the tone of the following message: "${currentRequest.messageId}"`);
+            const clarifier = await interaction.client.users.fetch(currentRequest.clarifierId);
+            await clarifier.send(`Please clarify the tone of the following message: "${currentRequest.messageId}"`);
 
-        //Collects messages 
+            //Collects messages 
 
-        const filter = (response: any) => response.author.id === clarifier.id && response.channelId === clarifier.dmChannel?.id;
-        const collector = clarifier.dmChannel?.createMessageCollector({filter, time: 60000});
+            const filter = (response: any) => response.author.id === clarifier.id && response.channelId === clarifier.dmChannel?.id;
+            const collector = clarifier.dmChannel?.createMessageCollector({filter});//getting rid of time limit for now - good idea?
 
-        collector?.on("collect", async(clarificationMessage)=> {
-            //bot will analyze the response 
-            const toneAnalysis = await analyzeTone(clarificationMessage.content);
+            collector?.on("collect", async(clarificationMessage)=> {
+                //bot will analyze the response 
+                const toneAnalysis = await analyzeTone(clarificationMessage.content);
 
-            //send analyzed tone back to the requester
-            const requester = await interaction.client.users.fetch(currentRequest.requesterId);
-            await requester.send(`Requested Tone Clarifcation for message " ${currentRequest.messageId}": "${toneAnalysis}"`);
+                //send analyzed tone back to the requester
+                const requester = await interaction.client.users.fetch(currentRequest.requesterId);
+                await requester.send(`Requested Tone Clarifcation for message " ${currentRequest.messageId}": "${toneAnalysis}"`);
 
-            //Mark this request as true
-            currentRequest.isClarified = true;
+                //Mark this request as true
+                currentRequest.isClarified = true;
+
+                collector.stop();
 
 
-        })
+        });
+
 
     }
 }
+}
+
+function getClarificationQueue(userId: string): any[]{
+    if(!clarificationQueueStore[userId]){
+        clarificationQueueStore[userId] = [];
+    }
+    return clarificationQueueStore[userId];
+}
+
+const clarificationQueueStore: {[key: string]: any[]} = {};
