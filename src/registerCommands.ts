@@ -1,9 +1,15 @@
 import "dotenv/config";
-import { ApplicationCommandOptionType, REST, Routes } from "discord.js";
+import { ApplicationCommandType, REST, Routes, ApplicationCommandOptionType } from "discord.js";
 
 declare type command = {
     name: string;
     description?: string;
+    options?: {
+        name: string,
+        description?: string, 
+        type: ApplicationCommandOptionType,
+        required: boolean
+    }[];
     type: number;
 };
 
