@@ -277,7 +277,7 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
 
         // Check that the array of calls includes our expected call
         expect(mockSet.mock.calls).toContainEqual([
-            undefined,
+            "mock-ref",
             {
                 mood: "happy",
                 timestamp: 1234567890
@@ -307,7 +307,7 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
             get: jest.fn(() => 1234567890)
         });
 
-        const { set: mockSet, get: mockGet } = require('firebase/database');
+        const { set: mockSet, get: mockGet } = require('firebase/database') as MockDatabase;
         mockSet.mockReset();
         mockGet.mockReset();
         mockGet.mockResolvedValue({
@@ -319,7 +319,7 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
 
         // Check that the array of calls includes our expected call
         expect(mockSet.mock.calls).toContainEqual([
-            undefined,
+            "mock-ref",
             {
                 mood: "excited",
                 timestamp: 1234567890
