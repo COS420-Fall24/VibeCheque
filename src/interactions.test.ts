@@ -1,4 +1,4 @@
-import { APIEmbed, ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
+import { ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message } from "discord.js";
 import { clarify, embed, ping, tone } from "./interactions";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
 import analyzeTone from "./gptRequests";
