@@ -206,31 +206,34 @@ async function processQueue(interaction: MessageContextMenuCommandInteraction<Ca
         });
         clarificationMessage += "\nReply with the number of the message you'd like to clarify.";
         await clarifier.send(clarificationMessage);
-    }
+    
 
-    // Create a collector for the clarifier's response
-    const filter = (response: Message) => 
-        response.author.id === clarifier.id && response.channel instanceof DMChannel;
+        // Create a collector for the clarifier's response
+        const filter = (response: Message) => 
+            response.author.id === clarifier.id && response.channel instanceof DMChannel;
 
-    const collector = clarifier.dmChannel?.createMessageCollector({ filter });
+        const collector = clarifier.dmChannel?.createMessageCollector({ filter });
 
-    collector?.on('collect', async (message) => {
-        const selectedNumber = parseInt(message.content, 10);
+        collector?.on('collect', async (message) => {
+            const selectedNumber = parseInt(message.content, 10);
 
-        if (!isNaN(selectedNumber) && selectedNumber > 0 && selectedNumber <= unclarifiedRequests.length) {
-            const selectedRequest = unclarifiedRequests[selectedNumber - 1];
-            await clarifier.send(`You selected message: "${selectedRequest.content}". Please reply with your clarification now.`);
+            if (!isNaN(selectedNumber) && selectedNumber > 0 && selectedNumber <= unclarifiedRequests.length) {
+                const selectedRequest = unclarifiedRequests[selectedNumber - 1];
 
-            // Create a new collector for the clarification message
-            const clarificationCollector = clarifier.dmChannel?.createMessageCollector({ 
-                filter, 
-                max: 1 
-            });
+                collector.stop();
 
-            clarificationCollector?.on('collect', async (clarificationMessage) => {
-                await handleClarification(interaction, clarificationQueue, selectedRequest, clarificationMessage);
-                clarificationCollector.stop(); // Stop the clarification collector
-                collector.stop(); // Stop the initial collector
+                await clarifier.send(`You selected message: "${selectedRequest.content}". Please reply with your clarification now.`);
+
+                // Create a new collector for the clarification message
+                const clarificationCollector = clarifier.dmChannel?.createMessageCollector({ 
+                    filter, 
+                    max: 1 
+                });
+
+                clarificationCollector?.on('collect', async (clarificationMessage) => {
+                    await handleClarification(interaction, clarificationQueue, selectedRequest, clarificationMessage);
+                    clarificationCollector.stop(); // Stop the clarification collector
+                    //collector.stop(); // Stop the initial collector
             });
         }
     });
@@ -261,6 +264,7 @@ async function handleClarification(
         clarificationQueue.splice(index, 1);
     }
 
-    // Process remaining unclarified requests
-    await processQueue(interaction, clarificationQueue);
-}
+    if(clarificationQueue.length>0){
+        await processQueue(interaction, clarificationQueue);
+    }
+}}
