@@ -1,9 +1,41 @@
-import { ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message } from "discord.js";
-import { clarify, embed, ping, tone } from "./interactions";
+import { CacheType, ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
+import { embed, ping, tone, mood, clarify } from "./interactions";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
-import analyzeTone from "./gptRequests";
-jest.mock("discord.js")
+import { analyzeTone } from "./gptRequests";
 jest.mock("./gptRequests")
+
+type MockDatabase = {
+    get: jest.Mock;
+    child: jest.Mock;
+    ref: jest.Mock;
+    set: jest.Mock;
+    getDatabase: jest.Mock;
+}
+
+jest.mock('firebase/database', (): MockDatabase => {
+    const mockSnapshot = {
+        exists: () => true,
+        val: () => ({ mood: "previous-mood" })
+    };
+
+    // Mock functions that will be exported
+    const mockGet = jest.fn().mockResolvedValue(mockSnapshot);
+    const mockChild = jest.fn((_, path) => {
+        return `servers/${path}`;
+    });
+    const mockRef = jest.fn().mockReturnValue('mock-ref');
+
+    return {
+        get: mockGet,
+        // @ts-ignore
+        child: mockChild,
+        ref: mockRef,
+        set: jest.fn().mockResolvedValue(undefined),
+        getDatabase: jest.fn().mockReturnValue({
+            ref: mockRef
+        })
+    };
+});
 
 describe("Testing slash commands", ()=>{
     /**
@@ -33,7 +65,7 @@ describe("Testing slash commands", ()=>{
     test("`ping` function defers a reply, then rejects the promise after 1000 ms if the interaction is not repliable", async ()=>{
         const discord = new MockDiscord({ command: "/ping" });
 
-        const interaction = discord.createMockInteraction("/ping", false) as ChatInputCommandInteraction;
+        const interaction = discord.createMockInteraction("/ping", discord.getGuild(), discord.getGuildMember(), false) as ChatInputCommandInteraction;
         const spyDeferReply = jest.spyOn(interaction, "deferReply");
         const spyEditReply = jest.spyOn(interaction, "editReply");
         const spyReject = jest.fn();
@@ -79,8 +111,7 @@ describe("Testing slash commands", ()=>{
      * "Something went wrong."
     */
     test("`tone` function defers a reply, then replies with something other than \"Something went wrong.\"", async ()=>{
-        // init discord
-        const discord = new MockDiscord({ command: "/ping" });
+        const discord = new MockDiscord({ command: "/tone" });
 
         // init interactioncommand
         const message = discord.createMockMessage({
@@ -207,4 +238,93 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
 
         expect(multiLineLatestMessage).toBe(multiLineResponse);
     });
+    
+    test("`mood` command correctly sets 'happy' mood in database and guild, and removes old mood 'angry'", async () => {
+        const discord = new MockDiscord({ 
+            command: "/mood", 
+            commandOptions: { currentmood: "happy" }
+        });
+
+        expect(discord.getRoles().find(role => role.name === "angry")).toBeUndefined();
+
+        discord.addRoleToGuild("angry", "000000");
+        discord.addRoleToGuild("happy", "000000");
+        discord.addRoleToMember("angry");
+
+        expect(discord.getRoles().find(role => role.name === "angry")).toBeDefined();
+
+        const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+        
+        // Add required properties to interaction
+        Object.defineProperty(interaction, 'guildId', {
+            get: jest.fn(() => 'mock-guild-id')
+        });
+        Object.defineProperty(interaction, 'createdTimestamp', {
+            get: jest.fn(() => 1234567890)
+        });
+
+        const { set: mockSet, get: mockGet } = require('firebase/database') as MockDatabase;
+        mockSet.mockReset();
+        mockGet.mockReset();
+        mockGet.mockResolvedValue({
+            exists: () => true,
+            val: () => ({ mood: "angry" })
+        });
+
+        await mood(interaction);
+
+        
+
+        // Check that the array of calls includes our expected call
+        expect(mockSet.mock.calls).toContainEqual([
+            undefined,
+            {
+                mood: "happy",
+                timestamp: 1234567890
+            }
+        ]);
+
+        expect(discord.getRoles().find(role => role.name === "angry")).toBeDefined();
+        expect(discord.getMemberRoles().find(role => role.name === "happy")).toBeDefined();
+        expect(discord.getMemberRoles().find(role => role.name === "angry")).toBeUndefined();
+
+
+    });
+
+    test("`mood` command first time usage. No data in database", async () => {
+        const discord = new MockDiscord({ 
+            command: "/mood", 
+            commandOptions: { currentmood: "excited" }
+        });
+
+        const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+        
+        // Add required properties to interaction
+        Object.defineProperty(interaction, 'guildId', {
+            get: jest.fn(() => 'mock-guild-id')
+        });
+        Object.defineProperty(interaction, 'createdTimestamp', {
+            get: jest.fn(() => 1234567890)
+        });
+
+        const { set: mockSet, get: mockGet } = require('firebase/database');
+        mockSet.mockReset();
+        mockGet.mockReset();
+        mockGet.mockResolvedValue({
+            exists: () => false,
+            val: () => null
+        });
+
+        await mood(interaction);
+
+        // Check that the array of calls includes our expected call
+        expect(mockSet.mock.calls).toContainEqual([
+            undefined,
+            {
+                mood: "excited",
+                timestamp: 1234567890
+            }
+        ]);
+    });
+    
 });
