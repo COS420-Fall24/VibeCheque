@@ -1,17 +1,20 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, 
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType,
     ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageContextMenuCommandInteraction, 
     SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "discord.js";
 import { analyzeTone, emojiRepresentation, explanationOfTone } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
 //getTones and Clarify rely on toneJSON. Implementing it in firebase would be better
-import toneJSON from "./tones.json" assert { type: "json"};
+//import toneJSON from "./tones.json" assert { type: "json"};
 
-interface Tone {
+export interface Tone {
     name: string;
     description: string;
     indicator: string;
 }
+
+//Import tones from tones.json
+const tones: Tone[] = require("./tones.json").tones;
 
 export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     var currentMood = interaction.options.get('currentmood')?.value!.toString();
@@ -214,7 +217,7 @@ export async function postemptiveToneAdd(interaction: MessageContextMenuCommandI
         .setMaxValues(5);
 
     //For each tone in toneJson.tones, we create a new option for our tone menu
-    toneJSON.tones.forEach((tone: Tone) => {
+    tones.forEach((tone: Tone) => {
         toneMenu.addOptions(
             new StringSelectMenuOptionBuilder()
                 .setValue(`${tone.name} (${tone.indicator})`)
@@ -263,7 +266,7 @@ export async function getTones(interaction: ChatInputCommandInteraction<CacheTyp
         .setMaxValues(5);
 
     //For each tone in toneJson.tones, we create a new option for our tone menu
-    toneJSON.tones.forEach((tone: Tone) => {
+    tones.forEach((tone: Tone) => {
         toneMenu.addOptions(
             new StringSelectMenuOptionBuilder()
                 .setValue(`${tone.name} (${tone.indicator})`)
@@ -335,7 +338,7 @@ export async function clarify(interaction: MessageContextMenuCommandInteraction<
         .setMinValues(1)
         .setMaxValues(5);
 
-    toneJSON.tones.forEach((tone: Tone) => {
+    tones.forEach((tone: Tone) => {
         toneMenu.addOptions(
             new StringSelectMenuOptionBuilder()
                 .setValue(` ${tone.name} (${tone.indicator})`)
