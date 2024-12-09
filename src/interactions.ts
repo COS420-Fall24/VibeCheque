@@ -220,8 +220,15 @@ async function processQueue(interaction: MessageContextMenuCommandInteraction<Ca
                 await handleClarification(interaction, clarificationQueue, selectedRequest, clarificationMessage);
                 clarificationCollector.stop();
 
+                //new stuff
+                const remainingRequests = clarificationQueue.filter(req => !req.isClarified);
+                if (remainingRequests.length > 0 ){
+                    await processQueue(interaction, clarificationQueue);
+
+                }
+
                 // Continue processing the queue
-                await processQueue(interaction, clarificationQueue);
+                //await processQueue(interaction, clarificationQueue);
             });
 
             // Stop the main collector once a valid selection is made
@@ -231,6 +238,13 @@ async function processQueue(interaction: MessageContextMenuCommandInteraction<Ca
             await clarifier.send("Invalid selection. Please reply with a valid number.");
         }
     });
+    collector?.on('end', () => {
+        // Ensure the queue clears when processing is done
+        if (clarificationQueue.filter(req => !req.isClarified).length === 0) {
+            clarificationQueue.length = 0;
+        }
+    });
+
 }
 
 async function handleClarification(
