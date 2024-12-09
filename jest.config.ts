@@ -10,5 +10,8 @@ module.exports = {
         "!<rootDir>/src/testing/",
         "!<rootDir>/build/"
     ],
+    coveragePathIgnorePatterns: [
+        "<rootDir>/src/testing/",
+    ],
     coverageReporters: ["text", "lcov"],
 };
