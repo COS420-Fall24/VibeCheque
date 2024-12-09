@@ -195,6 +195,7 @@ async function processQueue(interaction: MessageContextMenuCommandInteraction<Ca
         clarificationCollector?.on("collect", async (message) =>{
             await handleClarification(interaction, clarificationQueue, singleRequest, message);
             clarificationCollector.stop();
+            //await processQueue(interaction, clarificationQueue);
         });
    
     } 
@@ -233,6 +234,7 @@ async function processQueue(interaction: MessageContextMenuCommandInteraction<Ca
                 clarificationCollector?.on('collect', async (clarificationMessage) => {
                     await handleClarification(interaction, clarificationQueue, selectedRequest, clarificationMessage);
                     clarificationCollector.stop(); // Stop the clarification collector
+                    //await processQueue(interaction, clarificationQueue);
                     //collector.stop(); // Stop the initial collector
             });
         }
