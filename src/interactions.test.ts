@@ -1,5 +1,5 @@
 import { CacheType, ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
-import { embed, ping, tone, mood } from "./interactions";
+import { embed, ping, tone, mood, requestAnonymousClarification } from "./interactions";
 import MockDiscord from "./testing/mocks/mockDiscord";
 import { analyzeTone } from "./gptRequests";
 jest.mock("./gptRequests")
@@ -170,5 +170,28 @@ describe("Testing slash commands", ()=>{
             }
         ]);
     });
-    
+});
+describe("Testing requestAnonymousClarification command", () => {
+    console.log("Describe block is being executed."); // Debugging
+
+    test("should defer the reply and send an anonymous request to the target message author", async () => {
+        console.log("Test is being executed."); // Debugging
+        const discord = new MockDiscord({ command: "Request Clarification" });
+
+        const mockMessage = discord.createMockMessageWithDM();
+        const interaction = discord.createMockMessageCommand("Request Clarification", mockMessage);
+
+        const spyDeferReply = jest.spyOn(interaction, "deferReply");
+        const spyEditReply = jest.spyOn(interaction, "editReply");
+
+        await requestAnonymousClarification(interaction);
+
+        expect(spyDeferReply).toHaveBeenCalledWith({ ephemeral: true });
+        expect(mockMessage.author.send).toHaveBeenCalledWith(
+            `You've received an anonymous request for clarification on your message: "${mockMessage.content}". Will you clarify your tone?`
+        );
+        expect(spyEditReply).toHaveBeenCalledWith({
+            content: "Your request for anonymous clarification has been sent.",
+        });
+    });
 });
