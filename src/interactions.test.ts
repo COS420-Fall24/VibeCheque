@@ -1,7 +1,9 @@
-import { ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
-import { embed, ping, tone } from "./interactions";
+import { ChatInputCommandInteraction, EmbedBuilder, Message, MessageComponentBuilder, 
+    MessageContextMenuCommandInteraction, MessagePayload, ActionRowBuilder, 
+    StringSelectMenuComponent, ActionRow, ButtonComponent } from "discord.js";
+import { embed, ping, tone, action, getTones, Tone } from "./interactions";
 import MockDiscord from "./testing/mocks/mockDiscord";
-import analyzeTone from "./gptRequests";
+import { analyzeTone } from "./gptRequests";
 jest.mock("./gptRequests")
 
 describe("Testing slash commands", ()=>{
@@ -27,6 +29,8 @@ describe("Testing slash commands", ()=>{
         const interaction = discord.getInteraction() as ChatInputCommandInteraction;
 
         await embed(interaction);
+
+        //console.log("interaction: ", interaction);
 
         const reply = discord.getInteractionReply() as any;
 
@@ -59,5 +63,61 @@ describe("Testing slash commands", ()=>{
 
         expect(spyDeferReply).toHaveBeenCalled();
         expect(spyEditReply).not.toHaveBeenCalledWith("Something went wrong.");
+    });
+
+    //Best coverage I can do here, I have no clue how to implement the collector as it requires a lot of set up
+    test("`action` function replies with two action rows, one a menu, and the other five buttons.", async () => {
+        const discord = new MockDiscord({ command: "/action"});
+
+        const message = discord.createMockMessage({});
+
+        const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+
+        await action(interaction);
+
+        let reply: any = discord.getInteractionReply() as any;
+
+        expect(reply).toHaveProperty("components");
+        expect(reply.components).toHaveProperty("length");
+        expect(reply.components.length).toBe(2);
+        expect(reply.components[0] instanceof ActionRowBuilder).toBeTruthy();
+        expect(reply.components[1] instanceof ActionRowBuilder).toBeTruthy();
+
+        const actionRow1 = reply.components[0];
+        const actionRow2 = reply.components[1];
+
+        expect(actionRow1.components[0].options[0].data.label).toMatch('Option 1 Label');
+        expect(actionRow1.components[0].options[1].data.label).toMatch('Option 2 Label');
+        expect(actionRow1.components[0].options[2].data.label).toMatch('Option 3 Label');
+
+        expect(actionRow2.components[0].data.label).toMatch('Primary Button');
+        expect(actionRow2.components[1].data.label).toMatch('Secondary Button');
+        expect(actionRow2.components[2].data.label).toMatch('Success Button');
+        expect(actionRow2.components[3].data.label).toMatch('Danger Button');
+        expect(actionRow2.components[4].data.label).toMatch('Link Button');
+    });
+
+    //Can only test that the action row builder contains the items we expect
+    test("`list-tones` returns a message containing a StringSelectMenu of tones", async () => {
+        const discord = new MockDiscord({ command: "/list-tones"});
+
+        const message = discord.createMockMessage({});
+
+        const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+
+        await getTones(interaction);
+
+        let reply: any = discord.getInteractionReply() as any;
+
+        expect(reply).toHaveProperty("components");
+        expect(reply.components).toHaveProperty("length");
+        expect(reply.components.length).toBe(1);
+        expect(reply.components[0] instanceof ActionRowBuilder).toBeTruthy();
+
+        const actionRow = reply.components[0].components[0].options;
+
+        const tones: Tone[] = require("./tones.json").tones;
+
+        tones.forEach((tone: Tone, value: number) => {expect(actionRow[value].data.label).toMatch(`${tone.name}: ${tone.indicator}`)});
     });
 });

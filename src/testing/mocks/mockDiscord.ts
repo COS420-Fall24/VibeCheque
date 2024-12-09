@@ -7,12 +7,13 @@ import {
   Message,
   MessageContextMenuCommandInteraction,
   MessageCreateOptions,
+  ComponentType,
+  InteractionCollector,
 } from "discord.js";
 
 type MockDiscordOptions = {
     command: string
 }
-
 
 export default class MockDiscord {
     private client!: Client;
@@ -58,7 +59,8 @@ export default class MockDiscord {
             id: BigInt(1),
             // reply: jest.fn((text: string) => this.interactionReply = text),
             deferReply: jest.fn(),
-            editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => this.interactionReply = reply),
+            editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => { this.interactionReply = reply; return this.createMockMessage(reply as MessageCreateOptions); }),
+            //reply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => this.interactionReply = reply),
             // fetchReply: jest.fn(),
             isRepliable: jest.fn(() => true)
         } as unknown as CommandInteraction;
@@ -77,7 +79,17 @@ export default class MockDiscord {
             client: this.client,
             author: this.user,
             content: "MESSAGE CONTENT",
+            createMessageComponentCollector: jest.fn((filter: Function, componentType: ComponentType, time: number | undefined) => {return this.createMockCollector(filter, componentType, time)}),
             ...options
         } as unknown as Message;
+    }
+
+    public createMockCollector(filter: Function, componentType: ComponentType, time: number | undefined): InteractionCollector<any> {
+        return {
+            filter: filter,
+            componentType: componentType,
+            time: time,
+            on: jest.fn((event: "collect" | "dispose" | "ignore", listener: any) => {/* Do nothing */}),
+        } as unknown as InteractionCollector<any>;
     }
 }
