@@ -100,7 +100,7 @@ export async function explanationOfTone(userText: string): Promise<string> {
     return response.choices[0].message.content;
   }
   else{
-    return "Unknown error - can't generate the tone at the moment"
+    return "Unknown error - can't explain tone at the moment"
   }
 }
 
@@ -145,6 +145,42 @@ export async function emojiRepresentation(userText: string): Promise<string> {
     return response.choices[0].message.content;
   }
   else{
-    return "Unknown error - can't generate the tone at the moment"
+    return "Unknown error - can't generate emojis at the moment"
+  }
+}
+
+export async function analyzeMoodColor(mood: string): Promise<string> {
+  const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          "role": "system",
+          "content": [
+            {
+              "type": "text",
+              "text": `
+                This text is supposed to show a text messaging app user's mood. The text might be an emotion, or a symbol for an emotion (such as a smiley)
+                or it could be something arbitrary. Try to come up with a color hexcode that depicts the mood, and return that as hexcode without the pound (#) symbol 
+                (example, 000000) Only return the 6 character hexcode that is appropriate for the mood, and nothing else.
+              `
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": mood
+            }
+          ]
+        }
+      ]
+  });
+  if (response.choices[0].message.content !== null){
+      return response.choices[0].message.content;
+  }
+  else{
+      return "ffffff"
   }
 }

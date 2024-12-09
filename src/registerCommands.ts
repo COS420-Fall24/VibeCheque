@@ -90,5 +90,9 @@ updateCommands([
     {
         name: "In-Depth Clarification",
         type: 3,
+    },
+    {
+        name:"Request Anonymous Clarification",
+        type: 3,
     }
 ]);
