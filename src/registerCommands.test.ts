@@ -1,5 +1,4 @@
-import { REST, Routes } from "discord.js";
-import { updateCommands, main } from "./registerCommands";
+import * as registerCommands from "./registerCommands";
 jest.mock("discord.js");
 
 describe("Testing the functionality of \"registerCommands.ts\"", ()=>{
@@ -17,10 +16,9 @@ describe("Testing the functionality of \"registerCommands.ts\"", ()=>{
     test("`main` should call updateCommands with a ping message command", async ()=>{
         jest.resetModules();
         
-        const commandsModule = await import("./registerCommands");
-        const spyUpdateCommands = jest.spyOn(commandsModule, "updateCommands");
+        const spyUpdateCommands = jest.spyOn(registerCommands, "updateCommands");
         
-        await commandsModule.main();
+        await registerCommands.main();
 
         expect(spyUpdateCommands).toHaveBeenCalled();
         const calledCommands = spyUpdateCommands.mock.calls[0][0];
