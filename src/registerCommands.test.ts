@@ -1,6 +1,6 @@
-// import { REST } from "discord.js";
+import { REST, Routes } from "discord.js";
 import { updateCommands, main } from "./registerCommands";
-// jest.mock("discord.js");
+jest.mock("discord.js");
 
 describe("Testing the functionality of \"registerCommands.ts\"", ()=>{
     beforeAll(()=>{
@@ -15,14 +15,33 @@ describe("Testing the functionality of \"registerCommands.ts\"", ()=>{
      * Clarify: message command
      */
     test("`main` should call updateCommands with a ping message command", async ()=>{
-        // console.log(REST);
-        // const spyRestPut = jest.spyOn(REST.prototype, "put");
-
-        // const restInstance = new REST();
-        // restInstance.put("/");
+        jest.resetModules();
         
-        // await updateCommands([]);
+        const commandsModule = await import("./registerCommands");
+        const spyUpdateCommands = jest.spyOn(commandsModule, "updateCommands");
+        
+        await commandsModule.main();
 
-        // expect(spyRestPut).toHaveBeenCalled();
+        expect(spyUpdateCommands).toHaveBeenCalled();
+        const calledCommands = spyUpdateCommands.mock.calls[0][0];
+        
+        const pingCommand = calledCommands.find(cmd => cmd.name === "ping");
+        expect(pingCommand).toBeDefined();
+        expect(pingCommand?.type).toBe(1); // Type 1 is slash command
     });
+
+    // i cannot get this to work :/
+    // test("`updateCommands` should call REST.put with the correct arguments", async () => {
+    //     const spyRestPut = jest.spyOn(REST.prototype, "put");
+
+    //     const restInstance = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN as string);
+    //     await restInstance.put(Routes.applicationCommands("TEST APP ID"), { body: [] });
+
+    //     await updateCommands([]);
+
+    //     expect(spyRestPut).toHaveBeenCalledWith(
+    //         Routes.applicationCommands("TEST APP ID"),
+    //         { body: [] }
+    //     );
+    // });
 });

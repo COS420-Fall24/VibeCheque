@@ -26,8 +26,6 @@ export async function updateCommands(commands: command[]): Promise<void> {
         process.env.DISCORD_TOKEN as string,
     );
 
-    console.log(rest);
-
     try {
         console.log("refreshing commands");
 
@@ -43,8 +41,9 @@ export async function updateCommands(commands: command[]): Promise<void> {
     }
 }
 
-updateCommands([
-    {
+export async function main(): Promise<void> {
+    await exports.updateCommands([
+        {
         name: "ping",
         description: 'test bot and return "pong"',
         type: 1,
@@ -78,5 +77,6 @@ updateCommands([
     {
         name:"Request Anonymous Clarification",
         type: 3,
-    }
-]);
+        }
+    ]);
+}
