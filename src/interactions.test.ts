@@ -37,7 +37,14 @@ jest.mock('firebase/database', (): MockDatabase => {
     };
 });
 
-describe("Testing slash commands", ()=>{
+describe("Testing application commands", ()=>{
+    beforeAll(()=>{
+        process.env.APP_ID = "TEST APP ID";
+        process.env.DISCORD_TOKEN = "TEST TOKEN";
+        
+        jest.spyOn(console, "log").mockImplementation(() => {});
+    });
+
     describe("Testing ping command", () => {
         /**
          * The ping function should defer a reply, then respond with "pong!" at least a second later if the interaction
@@ -336,6 +343,39 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
                     timestamp: 1234567890
                 }
             ]);
+        });
+
+        /**
+         * the mood command should print an error to stderr if the mood is not found in the database
+         */
+        test("`mood` command prints an error to stderr if the mood is not found in the database", async () => {
+            const discord = new MockDiscord({ 
+                command: "/mood", 
+                commandOptions: { currentmood: "excited" }
+            });
+
+            const interaction = discord.getInteraction() as discordJS.ChatInputCommandInteraction;
+            const error = new Error("TEST ERROR");
+            
+            // Add required properties to interaction
+            Object.defineProperty(interaction, 'guildId', {
+                get: jest.fn(() => 'mock-guild-id')
+            });
+            Object.defineProperty(interaction, 'createdTimestamp', {
+                get: jest.fn(() => 1234567890)
+            });
+
+            const { set: mockSet, get: mockGet } = require('firebase/database') as MockDatabase;
+            mockSet.mockReset();
+            mockGet.mockReset();
+            mockGet.mockRejectedValue(error);
+
+            const spyStdErr = jest.spyOn(console, "error").mockImplementation(() => {});
+
+            await mood(interaction);
+
+            // Check that the array of calls includes our expected call
+            expect(spyStdErr).toHaveBeenCalledWith(error);
         });
     });
 

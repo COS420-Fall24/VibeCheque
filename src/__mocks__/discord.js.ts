@@ -19,13 +19,16 @@ Object.defineProperty(mockDiscordJS, "Routes", {
 });
 
 class MockREST extends discordJS.REST {
-    put: jest.Mock;
-    setToken: jest.Mock;
-
     constructor(options?: RESTOptions) {
         super(options);
-        this.put = jest.fn().mockResolvedValue({});
-        this.setToken = jest.fn().mockReturnThis();
+    }
+
+    public put(url: string, options: any): Promise<any> {
+        return Promise.resolve({});
+    }
+
+    public setToken(token: string): this {
+        return this;
     }
 }
 

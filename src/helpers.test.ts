@@ -38,6 +38,13 @@ jest.mock('firebase/database', (): MockDatabase => {
 });
 
 describe("Testing helper functions", () => {
+    beforeAll(()=>{
+        process.env.APP_ID = "TEST APP ID";
+        process.env.DISCORD_TOKEN = "TEST TOKEN";
+        
+        jest.spyOn(console, "log").mockImplementation(() => {});
+    });
+    
     describe("Testing updateOldRoleInServer", () => {
         test("returns 'No role specified' when roleName is empty, null, or undefined", async () => {
             const discord = new MockDiscord({ command: "/mood" });

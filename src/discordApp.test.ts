@@ -5,8 +5,11 @@ import { MockDiscord } from "./testing/mocks/mockDiscord";
 jest.mock("./interactions");
 
 describe("Testing discordApp.ts functions", () => {
-    beforeAll(() => {
-        process.env.DISCORD_TOKEN = "test-token";
+    beforeAll(()=>{
+        process.env.APP_ID = "TEST APP ID";
+        process.env.DISCORD_TOKEN = "TEST TOKEN";
+        
+        jest.spyOn(console, "log").mockImplementation(() => {});
     });
 
     describe("Testing launchBot's initialization", () => {

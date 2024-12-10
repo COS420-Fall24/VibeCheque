@@ -3,6 +3,13 @@ import * as OpenAI from "openai";
 jest.mock("openai");
 
 describe("Testing the functionality of gptRequests.ts", ()=>{
+    beforeAll(()=>{
+        process.env.APP_ID = "TEST APP ID";
+        process.env.DISCORD_TOKEN = "TEST TOKEN";
+        
+        jest.spyOn(console, "log").mockImplementation(() => {});
+    });
+
     describe("Testing analyzeTone", ()=>{
         /**
          * `gptRequests.ts` should have a function called `analyzeTone` that returns a string of the tone. If the tone is valid,
