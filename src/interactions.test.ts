@@ -1,7 +1,8 @@
-import { CacheType, ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
+import * as discordJS from "discord.js"; 
 import { embed, ping, tone, mood, clarify, requestAnonymousClarification } from "./interactions";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
-import { analyzeTone } from "./gptRequests";
+import * as gptRequests from "./gptRequests";
+import OpenAI from "openai";
 jest.mock("./gptRequests")
 
 type MockDatabase = {
@@ -45,7 +46,7 @@ describe("Testing slash commands", ()=>{
         test("`ping` function defers a reply, then replies with \"pong!\" after 1000 ms if the interaction is repliable", async ()=>{
             const discord = new MockDiscord({ command: "/ping" });
 
-            const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+            const interaction = discord.getInteraction() as discordJS.ChatInputCommandInteraction;
             const spyDeferReply = jest.spyOn(interaction, "deferReply");
             const spyEditReply = jest.spyOn(interaction, "editReply");
 
@@ -65,7 +66,7 @@ describe("Testing slash commands", ()=>{
         test("`ping` function defers a reply, then rejects the promise after 1000 ms if the interaction is not repliable", async ()=>{
             const discord = new MockDiscord({ command: "/ping" });
 
-            const interaction = discord.createMockInteraction("/ping", discord.getGuild(), discord.getGuildMember(), false) as ChatInputCommandInteraction;
+            const interaction = discord.createMockInteraction("/ping", discord.getGuild(), discord.getGuildMember(), false) as discordJS.ChatInputCommandInteraction;
             const spyDeferReply = jest.spyOn(interaction, "deferReply");
             const spyEditReply = jest.spyOn(interaction, "editReply");
             const spyReject = jest.fn();
@@ -90,7 +91,7 @@ describe("Testing slash commands", ()=>{
         test("`embed` function defers a reply, then replies with \"Purple Embed\" and \"Green Embed\", respectively", async ()=>{
             const discord = new MockDiscord({ command: "/embed" });
 
-            const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+            const interaction = discord.getInteraction() as discordJS.ChatInputCommandInteraction;
             const spyDeferReply = jest.spyOn(interaction, "deferReply");
             const spyEditReply = jest.spyOn(interaction, "editReply");
 
@@ -98,12 +99,12 @@ describe("Testing slash commands", ()=>{
 
             expect(spyDeferReply).toHaveBeenCalled();
 
-            const message = spyEditReply.mock.calls[0][0] as InteractionEditReplyOptions;
+            const message = spyEditReply.mock.calls[0][0] as discordJS.InteractionEditReplyOptions;
 
             expect(message.embeds!.length).toEqual(2);
 
-            const embed1 = (message.embeds![0] as EmbedBuilder);
-            const embed2 = (message.embeds![1] as EmbedBuilder);
+            const embed1 = (message.embeds![0] as discordJS.EmbedBuilder);
+            const embed2 = (message.embeds![1] as discordJS.EmbedBuilder);
 
             expect(embed1.data.title!).toMatch(/Purple Embed/);
             expect(embed2.data.title!).toMatch(/Green Embed/);
@@ -128,7 +129,7 @@ describe("Testing slash commands", ()=>{
             // set up spies
             const spyDeferReply = jest.spyOn(interaction, "deferReply");
             const spyEditReply = jest.spyOn(interaction, "editReply");
-            (analyzeTone as jest.Mock).mockReturnValue("this message has a TONE tone")
+            (gptRequests.analyzeTone as jest.Mock).mockReturnValue("this message has a TONE tone")
 
             await tone(interaction);
 
@@ -155,10 +156,10 @@ describe("Testing slash commands", ()=>{
             // set up spies
             const spyDeferReply = jest.spyOn(interaction, "deferReply");
             const spyEditReply = jest.spyOn(interaction, "editReply");
-            spyEditReply.mockImplementationOnce((message: any): Promise<Message<boolean>> => {
+            spyEditReply.mockImplementationOnce((message: any): Promise<discordJS.Message<boolean>> => {
                 throw new Error("TEST ERROR");
             });
-            (analyzeTone as jest.Mock).mockReturnValue("Unknown error - can't generate the tone at the moment")
+            (gptRequests.analyzeTone as jest.Mock).mockReturnValue("Unknown error - can't generate the tone at the moment")
             const spyStdErr = jest.spyOn(console, "error");
             spyStdErr.mockImplementation(error => {});
 
@@ -263,7 +264,7 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
 
             expect(discord.getRoles().find(role => role.name === "angry")).toBeDefined();
 
-            const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+            const interaction = discord.getInteraction() as discordJS.ChatInputCommandInteraction;
             
             // Add required properties to interaction
             Object.defineProperty(interaction, 'guildId', {
@@ -307,7 +308,7 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
                 commandOptions: { currentmood: "excited" }
             });
 
-            const interaction = discord.getInteraction() as ChatInputCommandInteraction;
+            const interaction = discord.getInteraction() as discordJS.ChatInputCommandInteraction;
             
             // Add required properties to interaction
             Object.defineProperty(interaction, 'guildId', {
@@ -342,7 +343,16 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
         // Debugging
         // console.log("Describe block is being executed.");
     
-        test("should defer the reply and send an anonymous request to the target message author", async () => {
+        /**
+         * The requestAnonymousClarification function should defer a reply, then reply with "Your request for anonymous clarification has been sent."
+         * 
+         * The function should then send an anonymous request to the target message author.
+         * 
+         * The request should be formatted as such:
+         * 
+         * You've received an anonymous request for clarification on your message: "This is the body of the message that needs clarification" Will you clarify your tone?
+         */
+        test("`requestAnonymousClarification` command should defer the reply and send an anonymous request to the target message author", async () => {
             // Debugging
             // console.log("Test is being executed.");
             const discord = new MockDiscord({ command: "Request Clarification" });
@@ -362,6 +372,97 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
             expect(spyEditReply).toHaveBeenCalledWith({
                 content: "Your request for anonymous clarification has been sent.",
             });
+        });
+
+        /**
+         * The requestAnonymousClarification function should listen for a response from the target message author
+         * 
+         * The function should then analyze the tone of the response, and respond to the requester with "Requested Tone Clarification: Selected Tone"
+         */
+        test("`requestAnonymousClarification` command listens for a response from the target message author, and responds with \"Requested Tone Clarification: Selected Tone\" and stops the collector", async ()=>{
+            const discord = new MockDiscord({ command: "Request Clarification" });
+
+            const testMessage = "This is a test message";
+            const testTone = "test tone";
+            const expectedResponse = `Requested Tone Clarification: "${testTone}"`;
+
+            const mockMessage = discord.createMockMessageWithDM();
+            const interaction = discord.createMockMessageCommand("Request Clarification", mockMessage);
+
+            const spyCollector = jest.spyOn(mockMessage.author.dmChannel!, "createMessageCollector");
+            const collector = new discordJS.MessageCollector(mockMessage.author.dmChannel!);
+            spyCollector.mockReturnValue(collector);
+
+            const spyCollectorOn = jest.spyOn(collector, "on");
+
+            await requestAnonymousClarification(interaction);
+
+            expect(spyCollector).toHaveBeenCalled();
+            expect(spyCollectorOn).toHaveBeenCalledWith("collect", expect.any(Function));
+
+            // Get the collect callback
+            const collectCallback: Function = spyCollectorOn.mock.calls.find(call => call[0] === "collect" && call[1] !== undefined)?.[1] as Function;
+
+            (gptRequests.analyzeTone as jest.Mock).mockResolvedValue(testTone);
+
+            // Call the collect callback with the test tone
+            await collectCallback(testMessage);
+
+            expect(interaction.user.send).toHaveBeenCalledWith(expectedResponse);
+
+            expect(collector.stop).toHaveBeenCalled();
+        });
+
+        /**
+         * The requestAnonymousClarification function should listen for a response from the target message author. if no response is received (the end event is called with reason "time"),
+         * the function should respond with "The user did not respond in time."
+         */
+        test("`requestAnonymousClarification` command listens for a response from the target message author, and responds with \"The user did not respond in time.\" if no response is received within the time limit", async ()=>{
+            const discord = new MockDiscord({ command: "Request Clarification" });
+
+            const expectedResponse = "The user did not respond in time.";
+
+            const mockMessage = discord.createMockMessageWithDM();
+            const interaction = discord.createMockMessageCommand("Request Clarification", mockMessage);
+
+            const spyCollector = jest.spyOn(mockMessage.author.dmChannel!, "createMessageCollector");
+            const collector = new discordJS.MessageCollector(mockMessage.author.dmChannel!);
+            spyCollector.mockReturnValue(collector);
+
+            const spyCollectorOn = jest.spyOn(collector, "on");
+
+            await requestAnonymousClarification(interaction);
+
+            expect(spyCollector).toHaveBeenCalled();
+            expect(spyCollectorOn).toHaveBeenCalledWith("end", expect.any(Function));
+
+            // Get the collect callback
+            const endCallback: Function = spyCollectorOn.mock.calls.find(call => call[0] === "end" && call[1] !== undefined)?.[1] as Function;
+
+            // Call the collect callback with the test tone
+            await endCallback(new discordJS.Collection(), "time");
+
+            expect(interaction.user.send).toHaveBeenCalledWith(expectedResponse);
+        });
+
+        /**
+         * The requestAnonymousClarification function should attempt to send a message to the target message author,
+         * and respond with "There was an error handling the clarification request" if the message fails to send
+         */
+        test("`requestAnonymousClarification` command attempts to send a message to the target message author, and responds with \"There was an error handling the clarification request\" if the message fails to send", async ()=>{
+            const discord = new MockDiscord({ command: "Request Clarification" });
+
+            const mockMessage = discord.createMockMessageWithDM();
+            const interaction = discord.createMockMessageCommand("Request Clarification", mockMessage);
+
+            const spySend = jest.spyOn(mockMessage.author, "send");
+            spySend.mockRejectedValue(new Error("TEST ERROR"));
+
+            const spyEditReply = jest.spyOn(interaction, "editReply");
+
+            await requestAnonymousClarification(interaction);
+
+            expect(spyEditReply.mock.calls[0][0]).toHaveProperty("content", "There was an error handling the clarification request");
         });
     });
 });

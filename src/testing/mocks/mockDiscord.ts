@@ -19,7 +19,8 @@ import {
   GuildMemberManager,
   Collection,
   ChatInputCommandInteraction,
-  InteractionReplyOptions
+  InteractionReplyOptions,
+  MessageCollector
 } from "discord.js";
 
 type MockDiscordOptions = {
@@ -170,6 +171,7 @@ export class MockDiscord {
             id: "user-id",
             string: "user-id",
             toString: jest.fn(() => "<@user-id>"),
+            send: jest.fn(),
             username: "USERNAME",
             discriminator: "user#0000",
             avatar: "user avatar url",
@@ -301,7 +303,7 @@ export class MockDiscord {
             id: "mock-dm-channel-id",
             send: jest.fn(),
             createMessageCollector: jest.fn(),
-        } as unknown as any; // Use `any` for custom mock methods not in `PartialDMChannel`
+        } as unknown as PartialDMChannel;
     
         // Mock a User with the DMChannel
         const author: User = {
