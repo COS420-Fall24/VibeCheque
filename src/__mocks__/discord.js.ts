@@ -6,11 +6,15 @@ const mockDiscordJS = jest.createMockFromModule<typeof import("discord.js")>("di
 mockDiscordJS.EmbedBuilder = discordJS.EmbedBuilder;
 mockDiscordJS.ApplicationCommandOptionType = discordJS.ApplicationCommandOptionType;
 mockDiscordJS.GatewayIntentBits = discordJS.GatewayIntentBits;
+mockDiscordJS.ApplicationCommandType = discordJS.ApplicationCommandType;
 mockDiscordJS.Collection = discordJS.Collection;
 
 Object.defineProperty(mockDiscordJS, "Routes", {
     writable: true,
-    value: { ...discordJS.Routes }
+    value: {
+        ...discordJS.Routes,
+        applicationCommands: (appId: string) => `/applications/${appId}/commands`
+    }
 });
 
 class MockREST extends discordJS.REST {
