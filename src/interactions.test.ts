@@ -171,11 +171,14 @@ describe("Testing slash commands", ()=>{
         ]);
     });
 });
+
 describe("Testing requestAnonymousClarification command", () => {
-    console.log("Describe block is being executed."); // Debugging
+    // Debugging
+    // console.log("Describe block is being executed.");
 
     test("should defer the reply and send an anonymous request to the target message author", async () => {
-        console.log("Test is being executed."); // Debugging
+        // Debugging
+        // console.log("Test is being executed.");
         const discord = new MockDiscord({ command: "Request Clarification" });
 
         const mockMessage = discord.createMockMessageWithDM();
