@@ -1,6 +1,7 @@
 import {
   Client,
   User,
+  PartialDMChannel,
   CommandInteraction,
   MessagePayload,
   InteractionEditReplyOptions,
@@ -294,6 +295,30 @@ export class MockDiscord {
     public getRoles(): Collection<string, any> {
         return this.roles;
     }
-
+    public createMockMessageWithDM(): Message {
+        // Mock a PartialDMChannel with the needed properties
+        const dmChannel = {
+            id: "mock-dm-channel-id",
+            send: jest.fn(),
+            createMessageCollector: jest.fn(),
+        } as unknown as any; // Use `any` for custom mock methods not in `PartialDMChannel`
     
+        // Mock a User with the DMChannel
+        const author: User = {
+            id: "mock-author-id",
+            username: "Mock User",
+            bot: false,
+            send: jest.fn(),
+            dmChannel, // Attach the mocked DMChannel
+        } as unknown as User;
+    
+        // Return a mocked Message
+        return {
+            id: "mock-message-id",
+            content: "Mocked message content",
+            author,
+            channel: dmChannel,
+            createdTimestamp: Date.now(),
+        } as unknown as Message;
+    }
 }

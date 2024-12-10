@@ -1,5 +1,5 @@
 import { CacheType, ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, Message, MessageComponentBuilder, MessageContextMenuCommandInteraction, MessagePayload } from "discord.js";
-import { embed, ping, tone, mood, clarify } from "./interactions";
+import { embed, ping, tone, mood, clarify, requestAnonymousClarification } from "./interactions";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
 import { analyzeTone } from "./gptRequests";
 jest.mock("./gptRequests")
@@ -325,5 +325,31 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
             }
         ]);
     });
-    
+});
+
+describe("Testing requestAnonymousClarification command", () => {
+    // Debugging
+    // console.log("Describe block is being executed.");
+
+    test("should defer the reply and send an anonymous request to the target message author", async () => {
+        // Debugging
+        // console.log("Test is being executed.");
+        const discord = new MockDiscord({ command: "Request Clarification" });
+
+        const mockMessage = discord.createMockMessageWithDM();
+        const interaction = discord.createMockMessageCommand("Request Clarification", mockMessage);
+
+        const spyDeferReply = jest.spyOn(interaction, "deferReply");
+        const spyEditReply = jest.spyOn(interaction, "editReply");
+
+        await requestAnonymousClarification(interaction);
+
+        expect(spyDeferReply).toHaveBeenCalledWith({ ephemeral: true });
+        expect(mockMessage.author.send).toHaveBeenCalledWith(
+            `You've received an anonymous request for clarification on your message: "${mockMessage.content}". Will you clarify your tone?`
+        );
+        expect(spyEditReply).toHaveBeenCalledWith({
+            content: "Your request for anonymous clarification has been sent.",
+        });
+    });
 });
