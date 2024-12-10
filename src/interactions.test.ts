@@ -2,8 +2,8 @@ import * as discordJS from "discord.js";
 import { embed, ping, tone, mood, clarify, requestAnonymousClarification } from "./interactions";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
 import * as gptRequests from "./gptRequests";
-import OpenAI from "openai";
 jest.mock("./gptRequests")
+jest.mock("discord.js");
 
 type MockDatabase = {
     get: jest.Mock;

@@ -1,6 +1,7 @@
 import * as discordJS from "discord.js";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
 import { updateOldRoleInServer, removeOldRoleInServer, updateNewRoleInServer } from "./helpers";
+jest.mock("discord.js");
 
 type MockDatabase = {
     get: jest.Mock;
@@ -44,7 +45,7 @@ describe("Testing helper functions", () => {
         
         jest.spyOn(console, "log").mockImplementation(() => {});
     });
-    
+
     describe("Testing updateOldRoleInServer", () => {
         test("returns 'No role specified' when roleName is empty, null, or undefined", async () => {
             const discord = new MockDiscord({ command: "/mood" });

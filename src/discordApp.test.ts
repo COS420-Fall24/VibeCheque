@@ -3,6 +3,7 @@ import * as discordApp from "./discordApp";
 import * as interactions from "./interactions";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
 jest.mock("./interactions");
+jest.mock("discord.js");
 
 describe("Testing discordApp.ts functions", () => {
     beforeAll(()=>{

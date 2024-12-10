@@ -1,5 +1,6 @@
 import * as mainFile from "./index"
 import * as discordApp from "./discordApp"
+jest.mock("./discordApp");
 
 describe("Testing slash commands", ()=>{
 	beforeAll(()=>{
@@ -8,7 +9,7 @@ describe("Testing slash commands", ()=>{
         
         jest.spyOn(console, "log").mockImplementation(() => {});
     });
-	
+
 	test("index.ts should run launchBot() from discordApp.ts", async ()=>{
 
 		const spyLaunchBot = jest.spyOn(discordApp, "launchBot");
