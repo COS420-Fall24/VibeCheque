@@ -1,4 +1,5 @@
-import { CacheType, ChatInputCommandInteraction, EmbedBuilder, 
+import { CacheType, ChatInputCommandInteraction, DMChannel, EmbedBuilder, 
+    Message, 
     MessageContextMenuCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
@@ -155,9 +156,6 @@ export async function requestAnonymousClarification(interaction: MessageContextM
                 }
             });
         }
-
-
-
 
     } catch(error){
         console.error("Error handling anonymous clarification request: ", error);

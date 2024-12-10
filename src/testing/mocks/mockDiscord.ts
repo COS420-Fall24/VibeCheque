@@ -1,12 +1,15 @@
 import {
   Client,
   User,
+  PartialDMChannel,
   CommandInteraction,
   MessagePayload,
   InteractionEditReplyOptions,
   Message,
   MessageContextMenuCommandInteraction,
   MessageCreateOptions,
+  Channel,
+  REST,
   Guild,
   GuildMember,
   CommandInteractionOptionResolver,
@@ -16,7 +19,9 @@ import {
   GuildMemberManager,
   Collection,
   ChatInputCommandInteraction,
-  InteractionReplyOptions
+  InteractionReplyOptions,
+  MessageCollector,
+  UserFlags
 } from "discord.js";
 
 type MockDiscordOptions = {
@@ -24,12 +29,13 @@ type MockDiscordOptions = {
     commandOptions?: {}
 }
 
-
-export default class MockDiscord {
+export class MockDiscord {
     private client!: Client;
     private user!: User;
+    private channel!: Channel;
     private interaction!: CommandInteraction;
     private interactionReply!: string | MessagePayload | InteractionEditReplyOptions;
+    private latestMessage!: string | MessagePayload;
     private interactionOptions!: CommandInteractionOption;
     private guild: Guild;
     private guildMember: GuildMember;
@@ -41,6 +47,7 @@ export default class MockDiscord {
         this.roles = new Collection();
         
         this.mockClient();
+        this.mockChannel(this.client);
         this.user = this.createMockUser(this.client);
         
         // Create guildMember first
@@ -118,7 +125,7 @@ export default class MockDiscord {
         // Set guild reference in guildMember
         this.guildMember.guild = this.guild;
 
-        this.interaction = this.createMockInteraction(options.command, this.guild, this.guildMember, options.commandOptions);
+        this.interaction = this.createMockInteraction(options.command, this.guild, this.guildMember, true, options.commandOptions);
     }
 
     public getInteraction(): CommandInteraction {
@@ -129,8 +136,20 @@ export default class MockDiscord {
         return this.interactionReply;
     }
 
+    public getLatestMessage(): string | MessagePayload {
+        return this.latestMessage;
+    }
+    
     public getUser(): User {
         return this.user;
+    }
+
+    public getGuild(): Guild {
+        return this.guild;
+    }
+
+    public getGuildMember(): GuildMember {
+        return this.guildMember;
     }
 
     private mockClient(): void {
@@ -138,15 +157,29 @@ export default class MockDiscord {
         this.client.login = jest.fn(() => Promise.resolve("LOGIN_TOKEN"));
     }
 
+    private mockChannel(client: Client): void {
+        this.channel = {
+            client: client,
+            id: "channel-id",
+            isSendable: jest.fn(() => true),
+            send: jest.fn((s: string | MessagePayload) => this.latestMessage = s)
+        } as unknown as Channel;
+    }
+
     private createMockUser(client: Client): User{
-        return {
+        let mockUser: User = {
             client: client,
             id: "user-id",
+            string: "user-id",
+            toString: jest.fn(() => "<@user-id>"),
+            send: jest.fn(),
             username: "USERNAME",
             discriminator: "user#0000",
             avatar: "user avatar url",
-            bot: false
-        } as User
+            bot: false,
+            flags: UserFlags.ActiveDeveloper
+        } as unknown as User
+        return mockUser;
     }
 
     private createMockGuild(client: Client): Guild {
@@ -197,12 +230,14 @@ export default class MockDiscord {
         } as unknown as GuildMember
     }
 
-    public createMockInteraction(command: string, mockGuild: any, mockMember: any, options: {} = {}): CommandInteraction {
+    public createMockInteraction(command: string, mockGuild: any, mockMember: any, repliable: boolean = true, options: {} = {}): CommandInteraction {
         return {
             client: this.client,
             user: this.user,
+            channel: this.channel,
             guild: mockGuild,
             data: command,
+            commandName: command,
             options: this.createMockOptions(options ? options : {}),
             id: BigInt(1),
             reply: jest.fn((replyOptions: string | MessagePayload | InteractionReplyOptions) => {
@@ -214,8 +249,10 @@ export default class MockDiscord {
                 this.interactionReply = reply;
                 return Promise.resolve();
             }), 
-            isRepliable: jest.fn(() => true),
-            member: mockMember
+            isRepliable: jest.fn(() => repliable),
+            member: mockMember,
+            isChatInputCommand: jest.fn(() => false),
+            isMessageContextMenuCommand: jest.fn(() => false)
         } as unknown as CommandInteraction;
     }
 
@@ -225,6 +262,14 @@ export default class MockDiscord {
             targetMessage: message,
             isMessageContextMenuCommand: jest.fn(() => true)
         } as unknown as MessageContextMenuCommandInteraction
+    }
+
+    public createMockChatInputCommand(command: string, options: {} = {}): ChatInputCommandInteraction {
+        return {
+            ...this.createMockInteraction(command, this.guild, this.guildMember),
+            options: this.createMockOptions(options),
+            isChatInputCommand: jest.fn(() => true)
+        } as unknown as ChatInputCommandInteraction;
     }
 
     public createMockMessage(options: MessageCreateOptions): Message {
@@ -265,6 +310,30 @@ export default class MockDiscord {
     public getRoles(): Collection<string, any> {
         return this.roles;
     }
-
+    public createMockMessageWithDM(): Message {
+        // Mock a PartialDMChannel with the needed properties
+        const dmChannel = {
+            id: "mock-dm-channel-id",
+            send: jest.fn(),
+            createMessageCollector: jest.fn(),
+        } as unknown as PartialDMChannel;
     
+        // Mock a User with the DMChannel
+        const author: User = {
+            id: "mock-author-id",
+            username: "Mock User",
+            bot: false,
+            send: jest.fn(),
+            dmChannel, // Attach the mocked DMChannel
+        } as unknown as User;
+    
+        // Return a mocked Message
+        return {
+            id: "mock-message-id",
+            content: "Mocked message content",
+            author,
+            channel: dmChannel,
+            createdTimestamp: Date.now(),
+        } as unknown as Message;
+    }
 }
