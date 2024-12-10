@@ -7,6 +7,8 @@ import {
   Message,
   MessageContextMenuCommandInteraction,
   MessageCreateOptions,
+  ComponentType,
+  InteractionCollector,
   Guild,
   GuildMember,
   CommandInteractionOptionResolver,
@@ -23,7 +25,6 @@ type MockDiscordOptions = {
     command: string,
     commandOptions?: {}
 }
-
 
 export default class MockDiscord {
     private client!: Client;
@@ -207,12 +208,12 @@ export default class MockDiscord {
             id: BigInt(1),
             reply: jest.fn((replyOptions: string | MessagePayload | InteractionReplyOptions) => {
                 this.interactionReply = replyOptions;
-                return Promise.resolve();
+                return Promise.resolve(this.createMockMessage(replyOptions as MessageCreateOptions));
             }),
             deferReply: jest.fn(),
             editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => {
                 this.interactionReply = reply;
-                return Promise.resolve();
+                return Promise.resolve(this.createMockMessage(reply as MessageCreateOptions));
             }), 
             isRepliable: jest.fn(() => true),
             member: mockMember
@@ -232,10 +233,20 @@ export default class MockDiscord {
             client: this.client,
             author: this.user,
             content: "MESSAGE CONTENT",
+            createMessageComponentCollector: jest.fn((filter: Function, componentType: ComponentType, time: number | undefined) => {return this.createMockCollector(filter, componentType, time)}),
             ...options
         } as unknown as Message;
     }
 
+    public createMockCollector(filter: Function, componentType: ComponentType, time: number | undefined): InteractionCollector<any> {
+        return {
+            filter: filter,
+            componentType: componentType,
+            time: time,
+            on: jest.fn((event: "collect" | "dispose" | "ignore", listener: any) => {/* Do nothing */}),
+        } as unknown as InteractionCollector<any>;
+    }
+    
     public createMockOptions(commandOptions: {}): CommandInteractionOptionResolver{
         return {
             options: commandOptions,

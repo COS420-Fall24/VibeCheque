@@ -42,12 +42,22 @@ async function updateCommands(commands: command[]): Promise<void> {
 }
 
 updateCommands([
-    {
+    /*{
         name: "ping",
         description: 'test bot and return "pong"',
         type: 1,
     },
     {
+        name: "action",
+        description: "tests the action row feature of discord",
+        type: 1,
+    },*/
+    {
+        name: "list-tones",
+        description: "lists a sample of tones and their description",
+        type: 1,
+    },
+    /*{
         name: "mood",
         description: "Sets the user's current mood",
         options: [
@@ -68,13 +78,21 @@ updateCommands([
     {
         name: "Tone",
         type: 3,
-    },
+    },*/
     {
+        name: "Add Tone",
+        type: 3,
+    },
+    /*{
         name: "Clarify",
         type: 3,
-    },
+    },*/
     {
+        name: "In-Depth Clarification",
+        type: 3,
+    },
+    /*{
         name:"Request Anonymous Clarification",
         type: 3,
-    }
+    },*/
 ]);
