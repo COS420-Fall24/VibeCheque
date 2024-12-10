@@ -27,7 +27,6 @@ jest.mock('firebase/database', (): MockDatabase => {
 
     return {
         get: mockGet,
-        // @ts-ignore
         child: mockChild,
         ref: mockRef,
         set: jest.fn().mockResolvedValue(undefined),
