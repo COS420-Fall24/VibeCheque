@@ -8,9 +8,6 @@ import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers"
 //getTones and Clarify rely on toneJSON. Implementing it in firebase would be better
 //import tonesData from "./tones.json" assert { type: "json"};
 import { readFile } from 'fs/promises';
-const tonesData = JSON.parse(
-  await readFile("./src/tones.json", "utf8")
-);
 
 //console.log(tonesData.tones);
 
@@ -20,8 +17,12 @@ export interface Tone {
     indicator: string;
 }
 
-//Import tones from tones.json
-const tones: Tone[] = tonesData.tones;
+async function initializeTones(): Promise<Tone[]> {
+    let tonesData: Tone[];
+    return tonesData = JSON.parse(
+        await readFile("./src/tones.json", "utf8")
+    ).tones;
+}
 
 export async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
@@ -156,6 +157,8 @@ export async function action(interaction: ChatInputCommandInteraction<CacheType>
 export async function postemptiveToneAdd(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
 
+    const tones: Tone[] = await initializeTones();
+
     //copy-paste select menu for tones:
     //create the tone menu which allows a user to select 1-5 tones
     const toneMenu = new StringSelectMenuBuilder()
@@ -205,6 +208,8 @@ export async function postemptiveToneAdd(interaction: MessageContextMenuCommandI
 //This already covers the preexisting tone add
 export async function getTones(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
+
+    const tones: Tone[] = await initializeTones();
 
     //create the tone menu which allows a user to select 1-5 tones
     const toneMenu = new StringSelectMenuBuilder()
@@ -278,6 +283,8 @@ export async function clarify(interaction: MessageContextMenuCommandInteraction<
         ephemeral: true,
         content: "Thanks for pointing that out, I'll ask for you!"
     })
+
+    const tones: Tone[] = await initializeTones();
 
     //create the tone menu and add the options from toneJSON
     const toneMenu = new StringSelectMenuBuilder()

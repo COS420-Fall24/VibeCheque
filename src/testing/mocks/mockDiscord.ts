@@ -208,12 +208,12 @@ export default class MockDiscord {
             id: BigInt(1),
             reply: jest.fn((replyOptions: string | MessagePayload | InteractionReplyOptions) => {
                 this.interactionReply = replyOptions;
-                return Promise.resolve();
+                return Promise.resolve(this.createMockMessage(replyOptions as MessageCreateOptions));
             }),
             deferReply: jest.fn(),
             editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => {
                 this.interactionReply = reply;
-                return Promise.resolve();
+                return Promise.resolve(this.createMockMessage(reply as MessageCreateOptions));
             }), 
             isRepliable: jest.fn(() => true),
             member: mockMember
