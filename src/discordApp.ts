@@ -1,15 +1,15 @@
 import "dotenv/config";
 import { analyzeTone }  from "./gptRequests";
 import { Client, GatewayIntentBits, Events, ClientUser } from "discord.js";
-import { clarify, embed, ping, tone, requestAnonymousClarification, /*mood*/ } from "./interactions"
+import { clarify, embed, ping, tone, requestAnonymousClarification, mood, /*mood*/ } from "./interactions"
 
-// define a bunch of emojis we'll use frequently here. either unicode character or just the id
+// define any emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
     heart: "❤️"
 };
 
 
-async function launchBot(): Promise<Client> {
+export async function launchBot(): Promise<Client> {
     // the client has to declare the features it uses up front so discord.js kno9ws if it can
     // ignore some fields and callbacks to save on hosting resources. here are some links to clarify:
     // discord.js: https://discordjs.guide/popular-topics/intents.html#error-disallowed-intents
@@ -33,7 +33,7 @@ async function launchBot(): Promise<Client> {
         if (client.user) {
             console.log(`client "ready": Logged in as ${client.user.tag}!`);
         } else {
-            console.warn(`client "ready": client.user is null!`);
+            console.error(`client "ready": client.user is null!`);
         }
     });
 
@@ -44,6 +44,9 @@ async function launchBot(): Promise<Client> {
         // arbitrary snowflake (ask me or look it up) e.g. `<@1295481669603688499>`
 
         console.log(message.content);
+        /* 
+        we should be able to remove this code, and just use the interaction events
+
         if (message.mentions.has(client.user as ClientUser)) {
             // console.log("mentioned!");
             // message.react(reactions.heart);
@@ -71,6 +74,7 @@ async function launchBot(): Promise<Client> {
             }
             message.reply(tone);
         }
+        */
     });
     
     // called when an interaction (e.g. slash command) is called. there are a bunch of different
@@ -80,7 +84,7 @@ async function launchBot(): Promise<Client> {
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === "ping") await ping(interaction);
             if (interaction.commandName === "embed") await embed(interaction);
-            //if (interaction.commandName === "mood") await mood(interaction);
+            if (interaction.commandName === "mood") await mood(interaction);
         } else if (interaction.isMessageContextMenuCommand()) {
             if (interaction.commandName === "Tone") await tone(interaction);
             if (interaction.commandName === "Clarify") await clarify(interaction);
@@ -95,5 +99,3 @@ async function launchBot(): Promise<Client> {
 
     return client;
 }
-
-export default launchBot;

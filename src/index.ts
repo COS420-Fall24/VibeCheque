@@ -1,4 +1,4 @@
-import launchBot from "./discordApp"
+import { launchBot } from "./discordApp"
 
 export async function main(){
     // might refactor this later

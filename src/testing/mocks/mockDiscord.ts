@@ -20,7 +20,8 @@ import {
   Collection,
   ChatInputCommandInteraction,
   InteractionReplyOptions,
-  MessageCollector
+  MessageCollector,
+  UserFlags
 } from "discord.js";
 
 type MockDiscordOptions = {
@@ -175,7 +176,8 @@ export class MockDiscord {
             username: "USERNAME",
             discriminator: "user#0000",
             avatar: "user avatar url",
-            bot: false
+            bot: false,
+            flags: UserFlags.ActiveDeveloper
         } as unknown as User
         return mockUser;
     }
@@ -235,6 +237,7 @@ export class MockDiscord {
             channel: this.channel,
             guild: mockGuild,
             data: command,
+            commandName: command,
             options: this.createMockOptions(options ? options : {}),
             id: BigInt(1),
             reply: jest.fn((replyOptions: string | MessagePayload | InteractionReplyOptions) => {
@@ -247,7 +250,9 @@ export class MockDiscord {
                 return Promise.resolve();
             }), 
             isRepliable: jest.fn(() => repliable),
-            member: mockMember
+            member: mockMember,
+            isChatInputCommand: jest.fn(() => false),
+            isMessageContextMenuCommand: jest.fn(() => false)
         } as unknown as CommandInteraction;
     }
 
@@ -257,6 +262,14 @@ export class MockDiscord {
             targetMessage: message,
             isMessageContextMenuCommand: jest.fn(() => true)
         } as unknown as MessageContextMenuCommandInteraction
+    }
+
+    public createMockChatInputCommand(command: string, options: {} = {}): ChatInputCommandInteraction {
+        return {
+            ...this.createMockInteraction(command, this.guild, this.guildMember),
+            options: this.createMockOptions(options),
+            isChatInputCommand: jest.fn(() => true)
+        } as unknown as ChatInputCommandInteraction;
     }
 
     public createMockMessage(options: MessageCreateOptions): Message {

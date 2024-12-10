@@ -4,7 +4,7 @@ import * as discordApp from "./discordApp"
 describe("Testing slash commands", ()=>{
 	test("index.ts should run launchBot() from discordApp.ts", async ()=>{
 
-		const spyLaunchBot = jest.spyOn(discordApp, "default");
+		const spyLaunchBot = jest.spyOn(discordApp, "launchBot");
 
 		await mainFile.main();
 
