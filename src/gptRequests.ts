@@ -42,10 +42,9 @@ export async function analyzeTone(userText: string): Promise<string> {
           }
         ]
     });
-    if (response.choices[0].message.content !== null){
+    if (response.choices[0].message.content !== null) {
         return response.choices[0].message.content;
-    }
-    else{
+    } else {
         return "Unknown error - can't generate the tone at the moment"
     }
 }
@@ -79,7 +78,7 @@ export async function analyzeMoodColor(mood: string): Promise<string> {
         ]
     });
     // Check if the response is valid
-    if (response.choices[0].message.content !== null && response.choices[0].message.content.match(/^[0-9a-fA-F]{6}$/)){
+    if (response.choices[0].message.content !== null && response.choices[0].message.content.match(/^[0-9a-fA-F]{6}$/)) {
         return response.choices[0].message.content;
     } else {
         return "ffffff"

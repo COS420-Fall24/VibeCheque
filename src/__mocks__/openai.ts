@@ -6,7 +6,7 @@ class MockOpenAIObject extends openAI.OpenAI {
         super();
         this.chat = MockOpenAIObject.prototype.chat;
     }
-}
+};
 
 MockOpenAIObject.prototype.chat = {
     // @ts-ignore
