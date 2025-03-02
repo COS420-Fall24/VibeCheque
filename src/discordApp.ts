@@ -1,7 +1,5 @@
-
-import 'dotenv/config';
-import analyzeTone from './gptRequests.js';
-import serverConfigManager from './serverConfigManager.js';
+import "dotenv/config";
+import { analyzeTone }  from "./gptRequests";
 import { 
     Client, 
     GatewayIntentBits, 
@@ -10,10 +8,21 @@ import {
     EmbedBuilder, 
     Message, 
     Interaction 
-} from 'discord.js';
-import { clarify, embed, ping, tone } from './interactions.js';
+} from "discord.js";
+import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
+import serverConfigManager from "./serverConfigManager";
 
-async function launchBot(): Promise<Client | null> {
+// define any emojis we'll use frequently here. either unicode character or just the id
+const reactions = {
+    heart: "❤️"
+};
+
+
+export async function launchBot(): Promise<Client> {
+    // the client has to declare the features it uses up front so discord.js kno9ws if it can
+    // ignore some fields and callbacks to save on hosting resources. here are some links to clarify:
+    // discord.js: https://discordjs.guide/popular-topics/intents.html#error-disallowed-intents
+    // discord API: https://discord.com/developers/docs/topics/gateway#list-of-intents
     const client = new Client({
         intents: [
             GatewayIntentBits.GuildEmojisAndStickers,
@@ -29,7 +38,7 @@ async function launchBot(): Promise<Client | null> {
         if (client.user) {
             console.log(`client "ready": Logged in as ${client.user.tag}!`);
         } else {
-            console.warn(`client "ready": client.user is null!`);
+            console.error(`client "ready": client.user is null!`);
         }
     });
 
@@ -104,6 +113,8 @@ async function launchBot(): Promise<Client | null> {
             
             message.reply(tone);
         }
+
+        console.log(message.content);
     });
 
     // Handle other interactions similar to message event
@@ -115,15 +126,13 @@ async function launchBot(): Promise<Client | null> {
         }
 
         if (interaction.isChatInputCommand()) {
-            if (interaction.commandName === "ping")
-                await ping(interaction);
-            if (interaction.commandName === "embed")
-                await embed(interaction);
+            if (interaction.commandName === "ping") await ping(interaction);
+            if (interaction.commandName === "embed") await embed(interaction);
+            if (interaction.commandName === "mood") await mood(interaction);
         } else if (interaction.isMessageContextMenuCommand()) {
-            if (interaction.commandName === "Tone")
-                await tone(interaction);
-            if (interaction.commandName === "Clarify")
-                await clarify(interaction);
+            if (interaction.commandName === "Tone") await tone(interaction);
+            if (interaction.commandName === "Clarify") await clarify(interaction);
+            if (interaction.commandName === "Request Anonymous Clarification") await requestAnonymousClarification(interaction);
         } else {
             console.log(interaction);
         }

@@ -12,6 +12,10 @@ describe('ServerConfigManager', () => {
         if (fs.existsSync(TEST_CONFIG_PATH)) {
             fs.unlinkSync(TEST_CONFIG_PATH);
         }
+
+        // Stop console.log output from flooding tests
+        jest.spyOn(console, "log").mockImplementation(() => {});
+
         serverConfigManager = new ServerConfigManager(TEST_CONFIG_PATH);
     });
 

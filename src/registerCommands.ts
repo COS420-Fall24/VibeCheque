@@ -1,9 +1,15 @@
 import "dotenv/config";
-import { REST, Routes } from "discord.js";
+import { ApplicationCommandType, REST, Routes, ApplicationCommandOptionType } from "discord.js";
 
 declare type command = {
     name: string;
     description?: string;
+    options?: {
+        name: string,
+        description?: string, 
+        type: ApplicationCommandOptionType,
+        required: boolean
+    }[];
     type: number;
 };
 
@@ -14,7 +20,7 @@ declare type command = {
  * This function handles all of the required api calls to register the bot's commands.
  * @param commands An array of commands to be registered
  */
-async function updateCommands(commands: command[]): Promise<void> {
+export async function updateCommands(commands: command[]): Promise<void> {
     // discord.js handles api endpoints for us with the REST object
     const rest = new REST({ version: "10" }).setToken(
         process.env.DISCORD_TOKEN as string,
@@ -35,11 +41,25 @@ async function updateCommands(commands: command[]): Promise<void> {
     }
 }
 
-updateCommands([
-    {
+export async function main(): Promise<void> {
+    await exports.updateCommands([
+        {
         name: "ping",
         description: 'test bot and return "pong"',
         type: 1,
+    },
+    {
+        name: "mood",
+        description: "Sets the user's current mood",
+        options: [
+            {
+                name: "currentmood",
+                description: "The mood to be set",
+                type: ApplicationCommandOptionType.String,
+                required: true
+            }
+        ],
+        type: 1
     },
     {
         name: "embed",
@@ -54,4 +74,9 @@ updateCommands([
         name: "Clarify",
         type: 3,
     },
-]);
+    {
+        name:"Request Anonymous Clarification",
+        type: 3,
+        }
+    ]);
+}
