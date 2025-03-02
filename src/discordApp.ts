@@ -1,7 +1,16 @@
 import "dotenv/config";
 import { analyzeTone }  from "./gptRequests";
-import { Client, GatewayIntentBits, Events, ClientUser } from "discord.js";
-import { clarify, embed, ping, tone, requestAnonymousClarification, mood, /*mood*/ } from "./interactions"
+import { 
+    Client, 
+    GatewayIntentBits, 
+    Events, 
+    PermissionsBitField, 
+    EmbedBuilder, 
+    Message, 
+    Interaction 
+} from "discord.js";
+import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
+import serverConfigManager from "./serverConfigManager";
 
 // define any emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
@@ -25,10 +34,6 @@ export async function launchBot(): Promise<Client> {
         ],
     });
 
-    // client.on takes an event and a function, and calls that function once the evnt is called.
-    // eventually, it may be wise to make each callback its own function for readibility.
-
-    // called when bot is live
     client.on(Events.ClientReady, () => {
         if (client.user) {
             console.log(`client "ready": Logged in as ${client.user.tag}!`);
@@ -37,50 +42,89 @@ export async function launchBot(): Promise<Client> {
         }
     });
 
-    // called when a message is sent
-    client.on(Events.MessageCreate, async (message) => {
-        // message.content shows the body of the messages, with a few quirks. For one,
-        // any emojis will be in the discord format, and pings will show up as some
-        // arbitrary snowflake (ask me or look it up) e.g. `<@1295481669603688499>`
+    client.on(Events.MessageCreate, async (message: Message) => {
+        // Special handling for toggle command - process it regardless of bot's enabled status
+        if (message.content === '!toggle') {
+            // Ensure the command is in a guild
+            if (!message.guild) return;
 
-        console.log(message.content);
-        /* 
-        we should be able to remove this code, and just use the interaction events
+            // Check for 'Manage Server' permission
+            if (!message.member?.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+                return message.reply('You need "Manage Server" permission to toggle the bot!');
+            }
 
-        if (message.mentions.has(client.user as ClientUser)) {
-            // console.log("mentioned!");
-            // message.react(reactions.heart);
+            // Ensure message.author and message.guild are not null
+            const authorId = message.author.id;
+            const guildId = message.guild.id;
 
-            // check if the message has a reference (a parent message aka if this message is a reply to another one)
-            // if so, and the message is just tagging the bot, analyze the parent message
-            // if not, analyze the sent message instead
+            // Toggle server status
+            const serverConfig = serverConfigManager.toggleServerStatus(guildId, authorId);
 
-            var tone;
-            if (message.reference !== null){
-                var parentMessage = await message.fetchReference()
+            // Create an embed to show the new status
+            const embed = new EmbedBuilder()
+                .setColor(serverConfig.isEnabled ? '#00FF00' : '#FF0000')
+                .setTitle('Bot Status')
+                .setDescription(`Bot is now ${serverConfig.isEnabled ? 'enabled ✅' : 'disabled ❌'} in this server`)
+                .addFields(
+                    { 
+                        name: 'Toggled By', 
+                        value: serverConfig.toggledBy ? `<@${serverConfig.toggledBy}>` : 'Unknown', 
+                        inline: true 
+                    },
+                    { 
+                        name: 'Last Toggled', 
+                        value: serverConfig.lastToggled 
+                            ? new Date(serverConfig.lastToggled).toLocaleString() 
+                            : 'Never', 
+                        inline: true 
+                    }
+                )
+                .setTimestamp();
+
+            await message.reply({ embeds: [embed] });
+            return;
+        }
+
+        // For all other commands, check if bot is enabled for this server
+        if (message.guild && !serverConfigManager.isServerEnabled(message.guild.id)) {
+            return;
+        }
+
+        // Rest of your existing message handling logic
+        if (message.mentions.has(client.user!)) {
+            let tone;
+            if (message.reference !== null) {
+                const parentMessage = await message.fetchReference();
+                
                 // if replied to the bot without tagging the bot, don't analyze 
-                if (parentMessage.author.id === client.user?.id && 
-                    !message.content.includes("<@" + client.user?.id + ">" )){ 
+                if (parentMessage.author.id === client.user?.id &&
+                    !message.content.includes(`<@${client.user?.id}>`)) {
                     return;
                 }
-                if (message.content === "<@" + client.user?.id + ">" ){
+
+                if (message.content === `<@${client.user?.id}>`) {
                     tone = await analyzeTone(parentMessage.content);
-                }
-                else {
+                } else {
                     tone = await analyzeTone(message.content);
                 }
             } else {
                 tone = await analyzeTone(message.content);
             }
+            
             message.reply(tone);
         }
-        */
+
+        console.log(message.content);
     });
-    
-    // called when an interaction (e.g. slash command) is called. there are a bunch of different
-    // interaction types, but we'll see which we need as time goes on.
-    // TODO: find references for this
-    client.on(Events.InteractionCreate, async (interaction) => {
+
+    // Handle other interactions similar to message event
+    client.on(Events.InteractionCreate, async (interaction: Interaction) => {
+        // Check if interaction is in a guild and bot is enabled for this server
+        // But allow the toggle command to work regardless
+        if (interaction.guild && !serverConfigManager.isServerEnabled(interaction.guild.id)) {
+            return;
+        }
+
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === "ping") await ping(interaction);
             if (interaction.commandName === "embed") await embed(interaction);
@@ -95,7 +139,8 @@ export async function launchBot(): Promise<Client> {
     });
 
     // attempt to connect
-    client.login(process.env.DISCORD_TOKEN);
-
+    await client.login(process.env.DISCORD_TOKEN);
     return client;
 }
+
+export default launchBot;

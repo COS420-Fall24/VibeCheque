@@ -21,7 +21,8 @@ import {
   ChatInputCommandInteraction,
   InteractionReplyOptions,
   MessageCollector,
-  UserFlags
+  UserFlags,
+  MessageMentions
 } from "discord.js";
 
 type MockDiscordOptions = {
@@ -276,9 +277,16 @@ export class MockDiscord {
         return {
             client: this.client,
             author: this.user,
+            mentions: this.createMockMentions([]),
             content: "MESSAGE CONTENT",
             ...options
         } as unknown as Message;
+    }
+
+    public createMockMentions(users: User[]): MessageMentions<true> {
+        return {
+            has: jest.fn((data)=>users.includes(data))
+        } as unknown as MessageMentions<true>;
     }
 
     public createMockOptions(commandOptions: {}): CommandInteractionOptionResolver{
