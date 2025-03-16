@@ -1,6 +1,6 @@
 {
   "name": "vibecheque",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "a discord bot for indicating the tone of text messages",
   "main": "index.js",
   "type": "module",
