@@ -1,5 +1,7 @@
 # Team-Firetruck: Discord Bot
 
+# test
+
 Team Firetruck's COS 420 working repository for the VibeCheque Discord Bot. Also see the [repository](https://github.com/COS420-Fall24/Team-F/tree/main) for the landing page.
 
 ## Installation Process
