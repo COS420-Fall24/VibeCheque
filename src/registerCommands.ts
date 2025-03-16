@@ -20,7 +20,7 @@ declare type command = {
  * This function handles all of the required api calls to register the bot's commands.
  * @param commands An array of commands to be registered
  */
-async function updateCommands(commands: command[]): Promise<void> {
+export async function updateCommands(commands: command[]): Promise<void> {
     // discord.js handles api endpoints for us with the REST object
     const rest = new REST({ version: "10" }).setToken(
         process.env.DISCORD_TOKEN as string,
@@ -42,22 +42,17 @@ async function updateCommands(commands: command[]): Promise<void> {
 }
 
 updateCommands([
-    /*{
+    {
         name: "ping",
         description: 'test bot and return "pong"',
         type: 1,
     },
     {
-        name: "action",
-        description: "tests the action row feature of discord",
-        type: 1,
-    },*/
-    {
         name: "list-tones",
         description: "lists a sample of tones and their description",
         type: 1,
     },
-    /*{
+    {
         name: "mood",
         description: "Sets the user's current mood",
         options: [
@@ -78,21 +73,21 @@ updateCommands([
     {
         name: "Tone",
         type: 3,
-    },*/
+    },
     {
         name: "Add Tone",
         type: 3,
     },
-    /*{
+    {
         name: "Clarify",
         type: 3,
-    },*/
+    },
     {
         name: "In-Depth Clarification",
         type: 3,
     },
-    /*{
+    {
         name:"Request Anonymous Clarification",
         type: 3,
-    },*/
+    }
 ]);

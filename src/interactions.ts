@@ -315,7 +315,7 @@ export async function clarify(interaction: MessageContextMenuCommandInteraction<
 To help me learn, I was hoping you could clarify the tone of your message.
 Here's a short list of tones, select up to five that apply:`,
         components: [row]});
-
+        
         //create the filter and the collector
         const collectorFilter = (i: {user: {id: string}; }) => i.user.id === interaction.targetMessage.author.id;
 
@@ -426,6 +426,7 @@ export async function requestAnonymousClarification(interaction: MessageContextM
                 }
             });
         }
+
     } catch(error){
         console.error("Error handling anonymous clarification request: ", error);
         await interaction.editReply({
