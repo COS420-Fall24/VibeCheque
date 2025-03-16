@@ -20,7 +20,7 @@ declare type command = {
  * This function handles all of the required api calls to register the bot's commands.
  * @param commands An array of commands to be registered
  */
-async function updateCommands(commands: command[]): Promise<void> {
+export async function updateCommands(commands: command[]): Promise<void> {
     // discord.js handles api endpoints for us with the REST object
     const rest = new REST({ version: "10" }).setToken(
         process.env.DISCORD_TOKEN as string,
@@ -41,45 +41,40 @@ async function updateCommands(commands: command[]): Promise<void> {
     }
 }
 
-async function main(): Promise<void> {
-    console.log("Registering commands...");
-    await updateCommands([
+updateCommands([
+    {
+    name: "ping",
+    description: 'test bot and return "pong"',
+    type: 1,
+},
+{
+    name: "mood",
+    description: "Sets the user's current mood",
+    options: [
         {
-        name: "ping",
-        description: 'test bot and return "pong"',
-        type: 1,
-    },
-    {
-        name: "mood",
-        description: "Sets the user's current mood",
-        options: [
-            {
-                name: "currentmood",
-                description: "The mood to be set",
-                type: ApplicationCommandOptionType.String,
-                required: true
-            }
-        ],
-        type: 1
-    },
-    {
-        name: "embed",
-        description: "test embed feature of discord",
-        type: 1,
-    },
-    {
-        name: "Tone",
-        type: 3,
-    },
-    {
-        name: "Clarify",
-        type: 3,
-    },
-    {
-        name:"Request Anonymous Clarification",
-        type: 3,
+            name: "currentmood",
+            description: "The mood to be set",
+            type: ApplicationCommandOptionType.String,
+            required: true
         }
-    ]);
-}
-
-main();
+    ],
+    type: 1
+},
+{
+    name: "embed",
+    description: "test embed feature of discord",
+    type: 1,
+},
+{
+    name: "Tone",
+    type: 3,
+},
+{
+    name: "Clarify",
+    type: 3,
+},
+{
+    name:"Request Anonymous Clarification",
+    type: 3,
+    }
+]);
