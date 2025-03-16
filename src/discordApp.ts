@@ -1,7 +1,7 @@
 import "dotenv/config";
-import { analyzeTone }  from "./gptRequests";
+import { analyzeTone } from "./gptRequests";
 import { Client, GatewayIntentBits, Events, ClientUser } from "discord.js";
-import { clarify, embed, ping, tone, requestAnonymousClarification, mood, /*mood*/ } from "./interactions"
+import { action, clarify, embed, ping, tone, getTones, mood, postemptiveToneAdd, inDepthClarification, requestAnonymousClarification } from "./interactions"
 
 // define any emojis we'll use frequently here. either unicode character or just the id
 const reactions = {
@@ -84,10 +84,14 @@ export async function launchBot(): Promise<Client> {
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === "ping") await ping(interaction);
             if (interaction.commandName === "embed") await embed(interaction);
+            if (interaction.commandName === "action") await action(interaction);
+            if (interaction.commandName === "list-tones") await getTones(interaction);
             if (interaction.commandName === "mood") await mood(interaction);
         } else if (interaction.isMessageContextMenuCommand()) {
             if (interaction.commandName === "Tone") await tone(interaction);
+            if (interaction.commandName === "Add Tone") await postemptiveToneAdd(interaction);
             if (interaction.commandName === "Clarify") await clarify(interaction);
+            if (interaction.commandName === "In-Depth Clarification") await inDepthClarification(interaction);
             if (interaction.commandName === "Request Anonymous Clarification") await requestAnonymousClarification(interaction);
         } else {
             console.log(interaction);

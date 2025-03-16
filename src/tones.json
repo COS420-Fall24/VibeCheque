@@ -1,0 +1,123 @@
+{
+    "tones": [{
+        "name": "Joking",
+        "description": "A tone used to indicate a message was a joke.",
+        "indicator": "\\j"
+    },
+    {
+        "name": "Half-Joking",
+        "description": "Used to indicate a message was said in a joke-like manner, but is semi-serious.",
+        "indicator": "\\hj"
+    },
+    {
+        "name": "Sarcastic",
+        "description": "A tone used to indicate a message was sarcastic or includes sarcasm.",
+        "indicator": "\\s"
+    },
+    {
+        "name": "Genuine",
+        "description": "A tone used to indicate a message was made with genuine intentions.",
+        "indicator": "\\g"
+    },
+    {
+        "name": "Serious",
+        "description": "A tone used to indicate a message is serious and is intended to be taken seriously.",
+        "indicator": "\\srs"
+    },
+    {
+        "name": "Non-Serious",
+        "description": "A tone used to indicate a message is not serious and shouldn't be taken seriously.",
+        "indicator": "\\nsrs"
+    },
+    {
+        "name": "Positive Connotation",
+        "description": "A tone used to indicate a message has a positive connotation.",
+        "indicator": "\\pos"
+    },
+    {
+        "name": "Neutral Connotation",
+        "description": "A tone indicating a message has a neutral connotation.",
+        "indicator": "\\neu"
+    },
+    {
+        "name": "Negative Connotation",
+        "description": "A tone used to indicate a message has a negative connotation.",
+        "indicator": "\\neg"
+    },
+    {
+        "name": "Platonic",
+        "description": "A tone used when a message is meant to be taken platonically",
+        "indicator": "\\p"
+    },
+    {
+        "name": "Romantic",
+        "description": "A tone used when a message is meant to be taken romantically.",
+        "indicator": "\\r"
+    },
+    {
+        "name": "Light-Hearted",
+        "description": "A tone used to indicate a message is light-hearted, carefree, or cheerful.",
+        "indicator": "\\lh"
+    },
+    {
+        "name": "Little Upset",
+        "description": "A tone used when the sender wants to indicate they're a little upset.",
+        "indicator": "\\lu"
+    },
+    {
+        "name": "Nobody Here",
+        "description": "A tone used when someone wants to indicate their post isn't directed at any recipient.",
+        "indicator": "\\nbh"
+    },
+    {
+        "name": "Rhetorical",
+        "description": "A tone used when a question is rhetorical and not meant to be answered.",
+        "indicator": "\\rh"
+    },
+    {
+        "name": "Teasing",
+        "description": "A tone used when a user intends to tease.",
+        "indicator": "\\t"
+    },
+    {
+        "name": "Inside Joke",
+        "description": "A tone used to mark any inside joke that other recipients might not get.",
+        "indicator": "\\ij"
+    },
+    {
+        "name": "Metaphorical",
+        "description": "A tone used to mark a message as metaphorical.",
+        "indicator": "\\m"
+    },
+    {
+        "name": "Literal",
+        "description": "A tone used to indicate a message is literal.",
+        "indicator": "\\li"
+    },
+    {
+        "name": "Hyperbole",
+        "description": "A tone used to indicate a message is hyperbole (an exaggeration)",
+        "indicator": "\\hyb"
+    },
+    {
+        "name": "Fake",
+        "description": "A tone used to mark something as fake or a lie.",
+        "indicator": "\\f"
+    },
+    {
+        "name": "Not Mad",
+        "description": "A tone used when a sender wants to indicate they're not mad.",
+        "indicator": "\\nm"
+    },
+    {
+        "name": "Copypasta",
+        "description": "A tone used to indicate a message is a copypasta (usually humorous copy-pasted texts).",
+        "indicator": "\\c"
+    },
+    {
+        "name": "Lyrics",
+        "description": "A tone used to indicate a message contains lyrics to a song.",
+        "indicator": "\\l"
+    }]
+
+}

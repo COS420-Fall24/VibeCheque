@@ -1,14 +1,25 @@
-import { Client, ClientOptions, RESTOptions, UserFlagsBitField } from "discord.js";
+import { ButtonStyle, Client, ClientOptions, RESTOptions, UserFlagsBitField } from "discord.js";
 
 const discordJS = jest.requireActual<typeof import("discord.js")>("discord.js");
 const mockDiscordJS = jest.createMockFromModule<typeof import("discord.js")>("discord.js");
 
-mockDiscordJS.EmbedBuilder = discordJS.EmbedBuilder;
+// types
 mockDiscordJS.ApplicationCommandOptionType = discordJS.ApplicationCommandOptionType;
 mockDiscordJS.GatewayIntentBits = discordJS.GatewayIntentBits;
 mockDiscordJS.UserFlags = discordJS.UserFlags;
 mockDiscordJS.ApplicationCommandType = discordJS.ApplicationCommandType;
+mockDiscordJS.ComponentType = discordJS.ComponentType;
+
+// classes
 mockDiscordJS.Collection = discordJS.Collection;
+
+// embeds
+mockDiscordJS.ActionRowBuilder = discordJS.ActionRowBuilder;
+mockDiscordJS.EmbedBuilder = discordJS.EmbedBuilder;
+mockDiscordJS.ButtonStyle = discordJS.ButtonStyle;
+mockDiscordJS.StringSelectMenuBuilder = discordJS.StringSelectMenuBuilder;
+mockDiscordJS.StringSelectMenuOptionBuilder = discordJS.StringSelectMenuOptionBuilder;
+mockDiscordJS.ButtonBuilder = discordJS.ButtonBuilder;
 
 Object.defineProperty(mockDiscordJS, "Routes", {
     writable: true,
@@ -92,11 +103,65 @@ class MockClientUser {
     }
 };
 
+// class MockStringSelectMenuBuilder extends discordJS.StringSelectMenuBuilder {
+//     constructor() {
+//         super();
+//     }
 
+//     public setLabel(label: string): this {
+//         return this;
+//     }
 
-// @ts-ignore
+//     public setDescription(description: string): this {
+//         return this;
+//     }
+
+//     public setCustomId(customId: string): this {
+//         return this;
+//     }
+// }
+
+// class MockStringSelectMenuOptionBuilder extends discordJS.StringSelectMenuOptionBuilder {
+//     constructor() {
+//         super();
+//     }
+
+//     public setLabel(label: string): this {
+//         return this;
+//     }
+
+//     public setValue(value: string): this {
+//         return this;
+//     }
+
+//     public setDescription(description: string): this {
+//         return this;
+//     }
+// }
+
+// class MockButtonBuilder extends discordJS.ButtonBuilder {
+//     constructor() {
+//         super();
+//     }
+
+//     public setCustomId(customId: string): this {
+//         return this;
+//     }
+
+//     public setLabel(label: string): this {
+//         return this;
+//     }
+
+//     public setStyle(style: ButtonStyle): this {
+//         return this;
+//     }
+// }
+
 mockDiscordJS.REST = MockREST;
 mockDiscordJS.Client = MockClient as unknown as typeof discordJS.Client;
 mockDiscordJS.ClientUser = MockClientUser as unknown as typeof discordJS.ClientUser;
+// mockDiscordJS.StringSelectMenuBuilder = MockStringSelectMenuBuilder;
+// mockDiscordJS.StringSelectMenuOptionBuilder = MockStringSelectMenuOptionBuilder;
+// mockDiscordJS.ButtonBuilder = MockButtonBuilder;
 
 module.exports = mockDiscordJS;
