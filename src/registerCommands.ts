@@ -41,42 +41,40 @@ export async function updateCommands(commands: command[]): Promise<void> {
     }
 }
 
-export async function main(): Promise<void> {
-    await exports.updateCommands([
+updateCommands([
+    {
+    name: "ping",
+    description: 'test bot and return "pong"',
+    type: 1,
+},
+{
+    name: "mood",
+    description: "Sets the user's current mood",
+    options: [
         {
-        name: "ping",
-        description: 'test bot and return "pong"',
-        type: 1,
-    },
-    {
-        name: "mood",
-        description: "Sets the user's current mood",
-        options: [
-            {
-                name: "currentmood",
-                description: "The mood to be set",
-                type: ApplicationCommandOptionType.String,
-                required: true
-            }
-        ],
-        type: 1
-    },
-    {
-        name: "embed",
-        description: "test embed feature of discord",
-        type: 1,
-    },
-    {
-        name: "Tone",
-        type: 3,
-    },
-    {
-        name: "Clarify",
-        type: 3,
-    },
-    {
-        name:"Request Anonymous Clarification",
-        type: 3,
+            name: "currentmood",
+            description: "The mood to be set",
+            type: ApplicationCommandOptionType.String,
+            required: true
         }
-    ]);
-}
+    ],
+    type: 1
+},
+{
+    name: "embed",
+    description: "test embed feature of discord",
+    type: 1,
+},
+{
+    name: "Tone",
+    type: 3,
+},
+{
+    name: "Clarify",
+    type: 3,
+},
+{
+    name:"Request Anonymous Clarification",
+    type: 3,
+    }
+]);

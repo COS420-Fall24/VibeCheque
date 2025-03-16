@@ -16,24 +16,6 @@ describe("Testing the functionality of \"registerCommands.ts\"", ()=>{
     });
 
     /**
-     * In main, updateCommands should be called with at least the following commands:
-     * ping: slash command
-     * Tone: message command
-     * Clarify: message command
-     */
-    test("`main` should call updateCommands with a ping message command", async ()=>{
-        const spyUpdateCommands = jest.spyOn(registerCommands, "updateCommands");
-        
-        await registerCommands.main();
-
-        expect(spyUpdateCommands).toHaveBeenCalled();
-        const calledCommands = spyUpdateCommands.mock.calls[0][0];
-        
-        const pingCommand = calledCommands.find(cmd => cmd.name === "ping");
-        expect(pingCommand).toBeDefined();
-        expect(pingCommand?.type).toBe(discordJS.ApplicationCommandType.ChatInput);
-    });
-    /**
      * `updateCommands` should print the app id and throw an error if the REST.put call fails
      */
     test("`updateCommands` should print the app id and throw an error if the REST.put call fails", async () => {
