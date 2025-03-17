@@ -1,9 +1,15 @@
 import "dotenv/config";
 import { OpenAI } from "openai";
 
+// TODO: add functions to determine the token counts of our prompts
+
+// initialize the API wrapper
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
 
+// wrapper for our tone analysis prompt
+// TODO: modify the prompt to include tones
 export async function analyzeTone(userText: string): Promise<string> {
+    // retrieve generated text
     const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
@@ -42,6 +48,8 @@ export async function analyzeTone(userText: string): Promise<string> {
           }
         ]
     });
+
+    // validate response
     if (response.choices[0].message.content !== null) {
         return response.choices[0].message.content;
     } else {
@@ -49,7 +57,10 @@ export async function analyzeTone(userText: string): Promise<string> {
     }
 }
 
+// wrapper for determining the color of a given tone
+// TODO: avoid common background colors
 export async function analyzeMoodColor(mood: string): Promise<string> {
+    // retrieve text
     const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
@@ -77,6 +88,7 @@ export async function analyzeMoodColor(mood: string): Promise<string> {
             }
         ]
     });
+
     // Check if the response is valid
     if (response.choices[0].message.content !== null && response.choices[0].message.content.match(/^[0-9a-fA-F]{6}$/)) {
         return response.choices[0].message.content;

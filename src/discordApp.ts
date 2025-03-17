@@ -1,13 +1,6 @@
 import "dotenv/config";
-import { analyzeTone }  from "./gptRequests";
-import { Client, GatewayIntentBits, Events, ClientUser } from "discord.js";
-import { clarify, embed, ping, tone, requestAnonymousClarification, mood, /*mood*/ } from "./interactions"
-
-// define any emojis we'll use frequently here. either unicode character or just the id
-const reactions = {
-    heart: "❤️"
-};
-
+import { Client, GatewayIntentBits, Events } from "discord.js";
+import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
 
 export async function launchBot(): Promise<Client> {
     // the client has to declare the features it uses up front so discord.js kno9ws if it can
@@ -44,48 +37,19 @@ export async function launchBot(): Promise<Client> {
         // arbitrary snowflake (ask me or look it up) e.g. `<@1295481669603688499>`
 
         console.log(message.content);
-        /* 
-        we should be able to remove this code, and just use the interaction events
 
-        if (message.mentions.has(client.user as ClientUser)) {
-            // console.log("mentioned!");
-            // message.react(reactions.heart);
-
-            // check if the message has a reference (a parent message aka if this message is a reply to another one)
-            // if so, and the message is just tagging the bot, analyze the parent message
-            // if not, analyze the sent message instead
-
-            var tone;
-            if (message.reference !== null){
-                var parentMessage = await message.fetchReference()
-                // if replied to the bot without tagging the bot, don't analyze 
-                if (parentMessage.author.id === client.user?.id && 
-                    !message.content.includes("<@" + client.user?.id + ">" )){ 
-                    return;
-                }
-                if (message.content === "<@" + client.user?.id + ">" ){
-                    tone = await analyzeTone(parentMessage.content);
-                }
-                else {
-                    tone = await analyzeTone(message.content);
-                }
-            } else {
-                tone = await analyzeTone(message.content);
-            }
-            message.reply(tone);
-        }
-        */
+        // TODO: add tone analysis here as well
     });
     
     // called when an interaction (e.g. slash command) is called. there are a bunch of different
     // interaction types, but we'll see which we need as time goes on.
     // TODO: find references for this
     client.on(Events.InteractionCreate, async (interaction) => {
-        if (interaction.isChatInputCommand()) {
+        if (interaction.isChatInputCommand()) { // slash command
             if (interaction.commandName === "ping") await ping(interaction);
             if (interaction.commandName === "embed") await embed(interaction);
             if (interaction.commandName === "mood") await mood(interaction);
-        } else if (interaction.isMessageContextMenuCommand()) {
+        } else if (interaction.isMessageContextMenuCommand()) { // command from the "apps" menu when clicking on a message
             if (interaction.commandName === "Tone") await tone(interaction);
             if (interaction.commandName === "Clarify") await clarify(interaction);
             if (interaction.commandName === "Request Anonymous Clarification") await requestAnonymousClarification(interaction);
