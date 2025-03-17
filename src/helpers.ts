@@ -1,6 +1,6 @@
 import { CacheType, ChatInputCommandInteraction} from "discord.js";
 import db from './firebase'; // Import from your firebase.ts file
-import { ref, set, get, child, remove, DatabaseReference, DataSnapshot }  from "firebase/database";
+import { ref, set, get, child, remove }  from "firebase/database";
 
 // TODO: remove db dependancy, use interaction.guild.roles.cache.find(role => role.members.size) to find the number of users with a role
 //       maybe only use db to store which roles are moods
