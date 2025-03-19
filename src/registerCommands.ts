@@ -1,6 +1,7 @@
 import "dotenv/config";
-import { ApplicationCommandType, REST, Routes, ApplicationCommandOptionType } from "discord.js";
+import { REST, Routes, ApplicationCommandOptionType } from "discord.js";
 
+// define a ts type for discord commands
 declare type command = {
     name: string;
     description?: string;
@@ -26,6 +27,7 @@ export async function updateCommands(commands: command[]): Promise<void> {
         process.env.DISCORD_TOKEN as string,
     );
 
+    // attempt to push the new commands to discord
     try {
         console.log("refreshing commands");
 
@@ -41,40 +43,41 @@ export async function updateCommands(commands: command[]): Promise<void> {
     }
 }
 
+// enter the data for each command the bot should register here
 updateCommands([
     {
-    name: "ping",
-    description: 'test bot and return "pong"',
-    type: 1,
-},
-{
-    name: "mood",
-    description: "Sets the user's current mood",
-    options: [
-        {
-            name: "currentmood",
-            description: "The mood to be set",
-            type: ApplicationCommandOptionType.String,
-            required: true
-        }
-    ],
-    type: 1
-},
-{
-    name: "embed",
-    description: "test embed feature of discord",
-    type: 1,
-},
-{
-    name: "Tone",
-    type: 3,
-},
-{
-    name: "Clarify",
-    type: 3,
-},
-{
-    name:"Request Anonymous Clarification",
-    type: 3,
+        name: "ping",
+        description: 'test bot and return "pong"',
+        type: 1,
+    },
+    {
+        name: "mood",
+        description: "Sets the user's current mood",
+        options: [
+            {
+                name: "currentmood",
+                description: "The mood to be set",
+                type: ApplicationCommandOptionType.String,
+                required: true
+            }
+        ],
+        type: 1
+    },
+    {
+        name: "embed",
+        description: "test embed feature of discord",
+        type: 1,
+    },
+    {
+        name: "Tone",
+        type: 3,
+    },
+    {
+        name: "Clarify",
+        type: 3,
+    },
+    {
+        name:"Request Anonymous Clarification",
+        type: 3,
     }
 ]);

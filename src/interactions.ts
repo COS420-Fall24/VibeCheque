@@ -1,15 +1,26 @@
-import { CacheType, ChatInputCommandInteraction, DMChannel, EmbedBuilder, 
-    Message, 
-    MessageContextMenuCommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+    CacheType,
+    ChatInputCommandInteraction,
+    EmbedBuilder,
+    MessageContextMenuCommandInteraction
+} from "discord.js";
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
 import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers"
 
-
+/**
+ * the callback to a `ping` interaction
+ * 
+ * @param interaction the interaction which triggered the function call
+ * @returns a promise, which resolves when the command is complete
+ */
 export async function ping(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    // defer a reply in case something goes wrong
     await interaction.deferReply();
+
     return new Promise((resolve, reject) => {
+        // reply after 1 second
         setTimeout(() => {
                 if (interaction.isRepliable()) {
                     interaction.editReply(`pong!`);
@@ -21,36 +32,63 @@ export async function ping(interaction: ChatInputCommandInteraction<CacheType>):
     })
 }
 
+/**
+ * the callback to an `embed` interaction
+ * 
+ * @param interaction the interaction which triggered the function call
+ * @returns void
+ */
 export async function embed(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
 
+    // create a purple embed
     const embed1 = new EmbedBuilder()
         .setColor("#aa33aa")
         .setTitle("Purple Embed");
     
+    // create a green embed
     const embed2 = new EmbedBuilder()
         .setColor("#33aa33")
         .setTitle("Green Embed");
     
+    // reply with those embeds
     interaction.editReply({ embeds: [embed1, embed2] });
 }
 
+/**
+ * the callback to a `tone` interaction
+ * 
+ * @param interaction the interaction which triggered the function call
+ * @returns void
+ */
 export async function tone(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply();
 
+    // attempt to analyze the tone
     try {
+        // reply with the GPT response if it is valid
         interaction.editReply(await analyzeTone(interaction.targetMessage.content));
     } catch (error) {
+        // otherwase, inform the user that an error occured
         interaction.editReply("Something went wrong.");
         console.error(error);
     }
 }
 
+/**
+ * the callback to a `clarify` interaction
+ * 
+ * @param interaction the interaction which triggered the function call
+ * @returns void
+ */
 export async function clarify(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void> {
+    // start by replying to the user letting them know the interaction went through
     interaction.reply({
         ephemeral: true,
         content: "Thanks for pointing that out, I'll ask for you!"
     })
+
+    // then ask the message's author for clarification
     if (interaction.channel?.isSendable()) {
 
         interaction.channel.send(`Hey there, ${interaction.targetMessage.author}! It seems I wasn't able to understand the tone in one of your messages:
@@ -62,6 +100,12 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`);
     }
 }
 
+/**
+ * the callback to a `mood` interaction
+ * 
+ * @param interaction the interaction which triggered the function call
+ * @returns void
+ */
 export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     var currentMood = interaction.options.getString('currentmood')!;
     let oldMood = "";
@@ -117,7 +161,12 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
     })
 }
 
-//request anonymous clarification function
+/**
+ * the callback to a `requestAnonymousClarification` interaction
+ * 
+ * @param interaction the interaction which triggered the function call
+ * @returns void
+ */
 export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
     await interaction.deferReply({ephemeral: true});
 
