@@ -3,12 +3,13 @@ import {
     ChatInputCommandInteraction,
     EmbedBuilder,
     MessageContextMenuCommandInteraction,
+    MessageFlags,
     Role,
     Snowflake
 } from "discord.js";
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
-import { ref, set, get, child, query } from "firebase/database";
+import { ref, set, get, child, query, DataSnapshot } from "firebase/database";
 import { addRoleToDatabase, MINIMUM_MOOD_LIFESPAN, removeRoleFromDatabase, removeRoleIfUnused} from "./helpers"
 
 /**
@@ -109,29 +110,51 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`);
  * @returns void
  */
 export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-    var currentMood = interaction.options.getString('currentmood')!;
-    let oldMood: Snowflake | undefined = undefined;
+    const currentMood = interaction.options.getString('currentmood')!;
+    let oldMood: Snowflake | null;
+    let newRole: Role | undefined;
+
+    await interaction.deferReply({flags: MessageFlags.Ephemeral});
+
+    // ensure the mood is not an existing server role
+    newRole = interaction.guild?.roles.cache.find(role => role.name === currentMood);
+    if (newRole) {
+        const dbRoleRef = ref(db, `servers/${interaction.guildId}/roles/${newRole.name}`);
+        const inDB = await get(dbRoleRef).then(snapshot => snapshot.exists());
+
+        // if the role is not in our database, it should be protected
+        if (!inDB) {
+            console.log(`mood change denied, ${newRole.id} (${newRole.name}) is not a VC mood`);
+            interaction.editReply("That is a preexisting role in this server! Please select a new mood.");
+            return;
+        }
+    }
+
+    // Get a reference to this user's section of the db
+    const dbUserRef = ref(db, `servers/${interaction.guildId}/username/${interaction.user.id}`);
 
     // Get the old mood from database
-    var dbRef = ref(db);
-    await get(child(dbRef, 'servers/' + interaction.guildId + '/username/' + interaction.user.id)).then((snapshot) => {
+    oldMood = await get(dbUserRef).then((snapshot) => {
         if (snapshot.exists()) {
-            oldMood = snapshot.val()["mood"]
+            return oldMood = snapshot.val()["mood"]
         } else {
-          console.log("No data available");
+            console.log("No data available");
+            return null;
         }
       }).catch((error) => {
         console.error(error);
     });
 
-    let guild = interaction.guild!;
-    let member = await guild.members.fetch(interaction.user.id);
+    const guild = interaction.guild!;
+    const member = await guild.members.fetch(interaction.user.id);
 
+    // if they had a db entry (old mood role), attempt to remove it
     if (oldMood) {
-        // delete the old mood from roles
         guild.roles.fetch(oldMood).then(role => {
             if (role) {
                 member.roles.remove(role);
+                // wait a bit for the cache to update
+                // maybe just clean roles after a certain interval of time eventually
                 setTimeout(() => removeRoleIfUnused(role), MINIMUM_MOOD_LIFESPAN);
             }
         }).catch((error) => {
@@ -139,21 +162,17 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
         });
     }
 
-    let newRole: Role | undefined;
-
     // update new role
-    if (interaction.guild?.roles.cache.find(role => role.name === currentMood)) {
-        newRole = guild.roles.cache.find((r) => r.name === currentMood);
-        member.roles.add(newRole!);
+    if (newRole) {
+        member.roles.add(newRole);
     } else {
-        let moodColorHex = await analyzeMoodColor(currentMood);
-        await guild.roles.create({name: currentMood, color: `#${moodColorHex}`})
-        newRole = guild.roles.cache.find((r) => r.name === currentMood);
+        const moodColorHex = await analyzeMoodColor(currentMood);
+        newRole = await guild.roles.create({name: currentMood, color: `#${moodColorHex}`});
         member.roles.add(newRole!);
     }
 
     // set the new mood in database
-    await set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.user.id), {
+    await set(dbUserRef, {
         mood: newRole!.id,
         timestamp: interaction.createdTimestamp
     });
@@ -161,10 +180,7 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
     // Update database with new role
     await addRoleToDatabase(interaction.guildId!, newRole!);
 
-    interaction.reply({
-        ephemeral: true,
-        content: "Thanks for updating your mood!"
-    })
+    interaction.editReply("Thanks for updating your mood!");
 }
 
 /**
