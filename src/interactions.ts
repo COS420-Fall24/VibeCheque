@@ -7,7 +7,7 @@ import {
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
-import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers"
+import { updateOldRoleInServer, updateNewRoleInServer, addRoleToDatabase, removeRoleFromDatabase} from "./helpers"
 
 /**
  * the callback to a `ping` interaction
@@ -128,8 +128,10 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
 
     // delete the old mood from roles
     if (interaction.guild?.roles.cache.find(role => role.name === oldMood)) {
-        if (member.roles.cache.find(role => role.name === oldMood)){
-            let oldRole = interaction.guild?.roles.cache.find(role => role.name === oldMood);
+        let oldRole = interaction.guild?.roles.cache.find(role => role.name === oldMood);
+        
+        if (oldRole){
+            oldRole!.members.size;
             member.roles.remove(oldRole!);
         }
     }
@@ -152,8 +154,8 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
     }
 
     // Update database with roles
-    await updateOldRoleInServer(interaction, oldMood);
-    await updateNewRoleInServer(interaction, currentMood);
+    await removeRoleFromDatabase(interaction.guildId!, oldMood);
+    await addRoleToDatabase(interaction.guildId!, currentMood);
 
     interaction.reply({
         ephemeral: true,

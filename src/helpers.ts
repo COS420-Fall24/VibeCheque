@@ -6,6 +6,50 @@ import { ref, set, get, child, remove }  from "firebase/database";
 //       maybe only use db to store which roles are moods
 
 /**
+ * adds a role to the database under a given guild
+ * 
+ * @param guildId the ID of the server containing the role
+ * @param roleName the name of the role to add to the database
+ * @returns a string containing the status of the operation
+ */
+export async function addRoleToDatabase(guildId: string, roleName: string): Promise<string> {
+    // if no role is given, exit
+    if (roleName === "" || roleName === null || roleName === undefined){
+        return "Invalid role specified";
+    }
+    
+    let rolesReference = ref(db, `servers/${guildId}/roles`);
+    
+    return await set(child(rolesReference, roleName), true).then((): string => {
+        return "role successfully set"
+    }).catch((): string => {
+        return "something went wrong";
+    });
+}
+
+/**
+ * removes a role from the VC database associated with a given guild
+ * 
+ * @param guildId the ID of the server containing the role
+ * @param roleName the name of the role to add to the database
+ * @returns a string containing the status of the operation
+ */
+export async function removeRoleFromDatabase(guildId: string, roleName: string): Promise<string> {
+    // if no role is given, exit
+    if (roleName === "" || roleName === null || roleName === undefined){
+        return "Invalid role specified";
+    }
+    
+    let rolesReference = ref(db, `servers/${guildId}/roles`);
+    
+    return await remove(child(rolesReference, roleName)).then((): string => {
+        return "role successfully removed"
+    }).catch((): string => {
+        return "something went wrong";
+    });
+}
+
+/**
  * determines whether a role should be removed from a given guild
  * 
  * @param interaction the interaction containing the guild information
@@ -13,15 +57,7 @@ import { ref, set, get, child, remove }  from "firebase/database";
  * @returns a string promise describing the outcome
  */
 export async function updateOldRoleInServer(interaction: ChatInputCommandInteraction<CacheType>, roleName: string | undefined): Promise<string>{
-    // if no role is given, exit
-    if (roleName === "" || roleName === null || roleName === undefined){
-        return "No role specified"
-    }
-
-    // if the guild is invalid, exit
-    if (!interaction.guild){
-        return "No server found";
-    }
+    
 
     // retrieve database info
     // TODO: remove the child() call, and add the path here
@@ -50,6 +86,7 @@ export async function updateOldRoleInServer(interaction: ChatInputCommandInterac
     let roleCount = roleObject["count"];
     if (roleCount > 1){
         // decrement the count
+        
         await set(ref(db, 'servers/' + interaction.guildId + '/roles/' + roleName), {
             count: roleCount - 1
         })
