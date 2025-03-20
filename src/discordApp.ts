@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { Client, GatewayIntentBits, Events } from "discord.js";
 import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
+import { cleanupRoles } from "./helpers";
 
 export async function launchBot(): Promise<Client> {
     // the client has to declare the features it uses up front so discord.js kno9ws if it can
@@ -9,7 +10,8 @@ export async function launchBot(): Promise<Client> {
     // discord API: https://discord.com/developers/docs/topics/gateway#list-of-intents
     const client = new Client({
         intents: [
-            GatewayIntentBits.GuildEmojisAndStickers,
+            GatewayIntentBits.GuildExpressions,
+            GatewayIntentBits.GuildMembers,
             GatewayIntentBits.GuildVoiceStates,
             GatewayIntentBits.Guilds,
             GatewayIntentBits.GuildMessages,
@@ -25,6 +27,13 @@ export async function launchBot(): Promise<Client> {
     client.on(Events.ClientReady, () => {
         if (client.user) {
             console.log(`client "ready": Logged in as ${client.user.tag}!`);
+
+            client.guilds.fetch().then(guilds => {
+                guilds.map((_, id) => {
+                    console.log(`cleaning up roles in guild with id ${id}`);
+                    cleanupRoles(client, id);
+                })
+            });
         } else {
             console.error(`client "ready": client.user is null!`);
         }

@@ -2,11 +2,13 @@ import {
     CacheType,
     ChatInputCommandInteraction,
     EmbedBuilder,
-    MessageContextMenuCommandInteraction
+    MessageContextMenuCommandInteraction,
+    Role,
+    Snowflake
 } from "discord.js";
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
-import { ref, set, get, child } from "firebase/database";
+import { ref, set, get, child, query } from "firebase/database";
 import { addRoleToDatabase, removeRoleFromDatabase} from "./helpers"
 
 /**
@@ -22,12 +24,12 @@ export async function ping(interaction: ChatInputCommandInteraction<CacheType>):
     return new Promise((resolve, reject) => {
         // reply after 1 second
         setTimeout(() => {
-                if (interaction.isRepliable()) {
-                    interaction.editReply(`pong!`);
-                    resolve();
-                } else {
-                    reject();
-                }
+            if (interaction.isRepliable()) {
+                interaction.editReply(`pong!`);
+                resolve();
+            } else {
+                reject();
+            }
         }, 1000);
     })
 }
@@ -108,7 +110,7 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`);
  */
 export async function mood(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     var currentMood = interaction.options.getString('currentmood')!;
-    let oldMood = "";
+    let oldMood: Snowflake | undefined = undefined;
 
     // Get the old mood from database
     var dbRef = ref(db);
@@ -125,37 +127,35 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
     let guild = interaction.guild!;
     let member = await guild.members.fetch(interaction.user.id);
 
-
+    
     // delete the old mood from roles
-    if (interaction.guild?.roles.cache.find(role => role.name === oldMood)) {
-        let oldRole = interaction.guild?.roles.cache.find(role => role.name === oldMood);
-        
-        if (oldRole){
-            oldRole!.members.size;
-            member.roles.remove(oldRole!);
-        }
-    }
+    guild.roles.fetch(oldMood).then(role => {
+        if (role) member.roles.remove(role);
+    }).catch((error) => {
+        console.error(error);
+    });;
 
-    // set the new mood in database
-    await set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.user.id), {
-        mood: currentMood,
-        timestamp: interaction.createdTimestamp
-    });
+    let newRole: Role | undefined;
 
     // update new role
     if (interaction.guild?.roles.cache.find(role => role.name === currentMood)) {
-        let newRole = guild.roles.cache.find((r) => r.name === currentMood);
+        newRole = guild.roles.cache.find((r) => r.name === currentMood);
         member.roles.add(newRole!);
     } else {
         let moodColorHex = await analyzeMoodColor(currentMood);
         await guild.roles.create({name: currentMood, color: `#${moodColorHex}`})
-        let newRole = guild.roles.cache.find((r) => r.name === currentMood);
+        newRole = guild.roles.cache.find((r) => r.name === currentMood);
         member.roles.add(newRole!);
     }
 
-    // Update database with roles
-    await removeRoleFromDatabase(interaction.guildId!, oldMood);
-    await addRoleToDatabase(interaction.guildId!, currentMood);
+    // set the new mood in database
+    await set(ref(db, 'servers/' + interaction.guildId + '/username/' + interaction.user.id), {
+        mood: newRole!.id,
+        timestamp: interaction.createdTimestamp
+    });
+
+    // Update database with new role
+    await addRoleToDatabase(interaction.guildId!, newRole!);
 
     interaction.reply({
         ephemeral: true,
