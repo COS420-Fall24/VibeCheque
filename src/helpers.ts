@@ -3,7 +3,7 @@ import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child, remove }  from "firebase/database";
 
 // the minimum amount of time a mood can be in a server before it gets deleted automatically
-export const MINIMUM_MOOD_LIFESPAN: number = 3 * (1000 * 60);
+export const MINIMUM_MOOD_LIFESPAN: number = 0.5 * (1000 * 60);
 
 /**
  * extracts the timestamp field of discord's Snowflake structure
@@ -62,12 +62,43 @@ export async function removeRoleFromDatabase(guildId: string, role: Role): Promi
 }
 
 /**
- * removes a role from the VC database associated with a given guild
+ * removes a role from the VC database and guild if it is unused
+ * 
+ * @param guildId the ID of the server containing the role
+ * @param roleName the name of the role to add to the database
+ * @returns a string containing the status of the operation
+ */
+export async function removeRoleIfUnused(role: Role | null): Promise<string> {
+    // if no role is given, exit
+    if (!role){
+        return "Invalid role specified";
+    }
+    
+    let timeDifference = Date.now() - getTimestampFromSnowflake(role.id);
+
+    if (timeDifference < MINIMUM_MOOD_LIFESPAN) {
+        return "role is too young to be removed"
+    }
+
+    return await role.guild.members.fetch().then((members): string => {
+        if (members.some(member => member.roles.cache.some(memberRole => memberRole.id === role.id))) {
+            return "role still in use"
+        }
+
+        console.log(`removing role ${role.id} (${role.name})`);
+        role.delete("Role out of use");
+        removeRoleFromDatabase(role.guild.id, role);
+        return "role removed"
+    });
+}
+
+/**
+ * removes all unused moods
  * 
  * @param guildId the ID of the server to clean
  * @returns a string containing the status of the operation
  */
-export async function cleanupRoles(client: Client, guildId: string): Promise<string> {
+export async function cleanupMoods(client: Client, guildId: string): Promise<string> {
     let guild = await client.guilds.fetch(guildId);
     // if no role is given, exit
     if (guild){
@@ -79,21 +110,7 @@ export async function cleanupRoles(client: Client, guildId: string): Promise<str
         snapshot.forEach((roleSnapshot) => {
             let roleSnowflake: Snowflake = roleSnapshot.val();
 
-            let timeDifference = Date.now() - getTimestampFromSnowflake(roleSnowflake);
-
-            if (timeDifference >= MINIMUM_MOOD_LIFESPAN) {
-                guild.roles.fetch(roleSnowflake, {cache: false, force: true}).then(role => {
-                    if (!role) return;
-
-                    guild.members.fetch().then(members => {
-                        if (!members.some(member => member.roles.cache.some(memberRole => memberRole.id === roleSnowflake))) {
-                            console.log(`removing role ${roleSnowflake} (${roleSnapshot.key})`);
-                            role.delete("Role out of use");
-                            removeRoleFromDatabase(guildId, role);
-                        }
-                    });
-                });
-            }
+            guild.roles.fetch(roleSnowflake).then(removeRoleIfUnused);
         });
 
         return "all unused roles removed";

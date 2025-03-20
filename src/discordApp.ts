@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Client, GatewayIntentBits, Events } from "discord.js";
 import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
-import { cleanupRoles } from "./helpers";
+import { cleanupMoods } from "./helpers";
 
 export async function launchBot(): Promise<Client> {
     // the client has to declare the features it uses up front so discord.js kno9ws if it can
@@ -31,7 +31,7 @@ export async function launchBot(): Promise<Client> {
             client.guilds.fetch().then(guilds => {
                 guilds.map((_, id) => {
                     console.log(`cleaning up roles in guild with id ${id}`);
-                    cleanupRoles(client, id);
+                    cleanupMoods(client, id);
                 })
             });
         } else {

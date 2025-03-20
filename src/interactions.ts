@@ -9,7 +9,7 @@ import {
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child, query } from "firebase/database";
-import { addRoleToDatabase, removeRoleFromDatabase} from "./helpers"
+import { addRoleToDatabase, MINIMUM_MOOD_LIFESPAN, removeRoleFromDatabase, removeRoleIfUnused} from "./helpers"
 
 /**
  * the callback to a `ping` interaction
@@ -127,13 +127,17 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
     let guild = interaction.guild!;
     let member = await guild.members.fetch(interaction.user.id);
 
-    
-    // delete the old mood from roles
-    guild.roles.fetch(oldMood).then(role => {
-        if (role) member.roles.remove(role);
-    }).catch((error) => {
-        console.error(error);
-    });;
+    if (oldMood) {
+        // delete the old mood from roles
+        guild.roles.fetch(oldMood).then(role => {
+            if (role) {
+                member.roles.remove(role);
+                setTimeout(() => removeRoleIfUnused(role), MINIMUM_MOOD_LIFESPAN);
+            }
+        }).catch((error) => {
+            console.error(error);
+        });
+    }
 
     let newRole: Role | undefined;
 
