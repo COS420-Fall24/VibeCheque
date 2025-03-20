@@ -7,7 +7,7 @@ import {
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
-import { updateOldRoleInServer, updateNewRoleInServer, addRoleToDatabase, removeRoleFromDatabase} from "./helpers"
+import { addRoleToDatabase, removeRoleFromDatabase} from "./helpers"
 
 /**
  * the callback to a `ping` interaction
