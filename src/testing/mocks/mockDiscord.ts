@@ -34,7 +34,7 @@ export class MockDiscord {
     private user!: User;
     private channel!: Channel;
     private interaction!: CommandInteraction;
-    private interactionReply!: string | MessagePayload | InteractionEditReplyOptions;
+    private interactionReply!: string | MessagePayload | InteractionReplyOptions | InteractionEditReplyOptions;
     private latestMessage!: string | MessagePayload;
     private interactionOptions!: CommandInteractionOption;
     private guild: Guild;
@@ -104,6 +104,11 @@ export class MockDiscord {
             name: "mock guild",
             roles: {
                 cache: this.roles,
+                fetch: jest.fn().mockResolvedValue({
+                    id: "role-id",
+                    name: "role-name",
+                    color: 0x000000
+                }),
                 create: jest.fn().mockImplementation((options: any) => {
                     // console.log("create role called with options: " + options.name + " " + options.color);
                     const newRole = { 
@@ -132,7 +137,7 @@ export class MockDiscord {
         return this.interaction;
     }
 
-    public getInteractionReply(): string | MessagePayload | InteractionEditReplyOptions {
+    public getInteractionReply(): string | MessagePayload | InteractionReplyOptions | InteractionEditReplyOptions {
         return this.interactionReply;
     }
 
