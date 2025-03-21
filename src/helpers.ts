@@ -14,7 +14,7 @@ export const MINIMUM_MOOD_LIFESPAN: number = 0.5 * (1000 * 60);
  * @returns the timestamp of the snowflake
  */
 export function getTimestampFromSnowflake(snowflake: Snowflake): number {
-    return (parseInt(snowflake) >> 22) + 1420070400000;
+    return Number((BigInt(snowflake) >> 22n) + 1420070400000n);
 }
 
 /**

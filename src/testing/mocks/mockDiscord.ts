@@ -71,7 +71,7 @@ export class MockDiscord {
                             this.memberRoles.set(roleObj.id, roleObj)
                         } else {
                             const newRole = { 
-                                id: `${role}-role-id`, 
+                                id: `${(role).length}`, 
                                 name: role,
                                 color: 0x000000
                             }
@@ -126,11 +126,11 @@ export class MockDiscord {
         this.guild.roles.create = jest.fn().mockImplementation((options: any) => {
             // console.log("create role called with options: " + options.name + " " + options.color);
             const newRole = { 
-                id: `${options.name}-role-id`, 
+                id: `${(options.name as string).length}`, 
                 name: options.name,
                 color: options.color || 0x000000,
                 guild: this.guild,
-                delete: jest.fn((_) => this.roles.delete(`${options.name}-role-id`,))
+                delete: jest.fn((_) => this.roles.delete(`${(options.name as string).length}`,))
             };
             this.roles.set(newRole.id, newRole);
             // console.log("found role:", JSON.stringify(this.roles.find(role => role.name === "happy")));
