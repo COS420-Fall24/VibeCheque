@@ -155,13 +155,15 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
                 member.roles.remove(role);
                 // wait a bit for the cache to update
                 // maybe just clean roles after a certain interval of time eventually
-                setTimeout(() => removeRoleIfUnused(role), MINIMUM_MOOD_LIFESPAN);
+                setTimeout(() => {
+                    removeRoleIfUnused(role);
+                }, MINIMUM_MOOD_LIFESPAN);
             }
         }).catch((error) => {
             console.error(error);
         });
     }
-
+    
     // update new role
     if (newRole) {
         member.roles.add(newRole);

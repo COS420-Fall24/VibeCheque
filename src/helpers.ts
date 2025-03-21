@@ -1,6 +1,6 @@
 import { CacheType, ChatInputCommandInteraction, Client, FetchMembersOptions, Guild, Role, Snowflake} from "discord.js";
 import db from './firebase'; // Import from your firebase.ts file
-import { ref, set, get, child, remove }  from "firebase/database";
+import { ref, set, get, child, remove } from "firebase/database";
 
 // the minimum amount of time a mood can be in a server before it gets deleted automatically
 export const MINIMUM_MOOD_LIFESPAN: number = 0.5 * (1000 * 60);
@@ -31,8 +31,9 @@ export async function addRoleToDatabase(guildId: string, role: Role): Promise<st
     }
     
     let rolesReference = ref(db, `servers/${guildId}/roles`);
+    let setPromise = set(child(rolesReference, role.name), role.id);
     
-    return await set(child(rolesReference, role.name), role.id).then((): string => {
+    return await setPromise.then((): string => {
         return "role successfully set"
     }).catch((): string => {
         return "something went wrong";
@@ -79,8 +80,10 @@ export async function removeRoleIfUnused(role: Role | null): Promise<string> {
     if (timeDifference < MINIMUM_MOOD_LIFESPAN) {
         return "role is too young to be removed"
     }
-
+    
+    
     return await role.guild.members.fetch().then((members): string => {
+        // console.log(members);
         if (members.some(member => member.roles.cache.some(memberRole => memberRole.id === role.id))) {
             return "role still in use"
         }

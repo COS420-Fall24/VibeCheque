@@ -21,7 +21,8 @@ import {
   ChatInputCommandInteraction,
   InteractionReplyOptions,
   MessageCollector,
-  UserFlags
+  UserFlags,
+  GuildCreateOptions
 } from "discord.js";
 
 type MockDiscordOptions = {
@@ -98,34 +99,43 @@ export class MockDiscord {
         } as unknown as GuildMember;
 
         // Then create guild with reference to guildMember
+        let memberCache = new Collection<string, GuildMember>([[this.user.id, this.guildMember]]);
         this.guild = {
             client: this.client,
             id: "guild-id",
             name: "mock guild",
             roles: {
                 cache: this.roles,
-                fetch: jest.fn().mockResolvedValue({
-                    id: "role-id",
-                    name: "role-name",
-                    color: 0x000000
-                }),
-                create: jest.fn().mockImplementation((options: any) => {
-                    // console.log("create role called with options: " + options.name + " " + options.color);
-                    const newRole = { 
-                        id: `${options.name}-role-id`, 
-                        name: options.name,
-                        color: options.color || 0x000000
-                    };
-                    this.roles.set(newRole.id, newRole);
-                    // console.log("found role:", JSON.stringify(this.roles.find(role => role.name === "happy")));
-                    return Promise.resolve(newRole);
-                })
+                fetch: jest.fn(),
+                create: jest.fn()
             },
             members: {
-                cache: new Map([[this.user.id, this.guildMember]]),
-                fetch: jest.fn().mockResolvedValue(this.guildMember)
+                cache: memberCache,
+                fetch: jest.fn(async (query) => {
+                    if (query == this.user.id) {
+                        return this.guildMember;
+                    } else {
+                        return memberCache;
+                    }
+                }),
+                some: jest.fn().mockResolvedValue(true)
             }
         } as unknown as Guild;
+
+        this.guild.roles.fetch = jest.fn(async (id) => this.roles.get(id)) as jest.Mock
+        this.guild.roles.create = jest.fn().mockImplementation((options: any) => {
+            // console.log("create role called with options: " + options.name + " " + options.color);
+            const newRole = { 
+                id: `${options.name}-role-id`, 
+                name: options.name,
+                color: options.color || 0x000000,
+                guild: this.guild,
+                delete: jest.fn((_) => this.roles.delete(`${options.name}-role-id`,))
+            };
+            this.roles.set(newRole.id, newRole);
+            // console.log("found role:", JSON.stringify(this.roles.find(role => role.name === "happy")));
+            return Promise.resolve(newRole);
+        });
 
         // Set guild reference in guildMember
         this.guildMember.guild = this.guild;
