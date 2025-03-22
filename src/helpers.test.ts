@@ -1,7 +1,7 @@
 import * as discordJS from "discord.js";
 import * as firebase from "firebase/database";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
-import { getTimestampFromSnowflake } from "./helpers";
+import { addRoleToDatabase, getTimestampFromSnowflake, removeRoleFromDatabase } from "./helpers";
 jest.mock("discord.js");
 jest.mock("firebase/database");
 
@@ -17,7 +17,6 @@ describe("Testing helper functions", () => {
         test("the snowflake '0' should return the Discord Epoch (1420070400000)", () => {
             const inputSnowflake = "0";
             const outputTime = 1420070400000;
-            console.log(Number((0n >> 22n) + 1420070400000n));
 
             const result = getTimestampFromSnowflake(inputSnowflake);
 
@@ -33,4 +32,66 @@ describe("Testing helper functions", () => {
             expect(result).toBe(outputTime);
         });
     });
+
+    describe("Testing addRoleToDatabase", () => {
+        test("addRoleToDatabase should set servers/[guild id]/roles/[role name] to the role id", async () => {
+            const role = { name: "role-name", id: "role-id" } as unknown as discordJS.Role;
+            const guildId = "guild-id";
+
+            const mockSet = jest.spyOn(firebase, "set");
+
+            const result = await addRoleToDatabase(guildId, role);
+
+            expect(mockSet).toHaveBeenCalled();
+            expect(mockSet.mock.calls[0][0]).toBe(`servers/${guildId}/roles/${role.name}`);
+            expect(mockSet.mock.calls[0][1]).toBe(role.id);
+
+            expect(result).toBe("role successfully set");
+        });
+
+        test("addRoleToDatabase should return \"something went wrong\" if `set` fails", async () => {
+            const role = { name: "role-name", id: "role-id" } as unknown as discordJS.Role;
+            const guildId = "guild-id";
+
+            const mockSet = jest.spyOn(firebase, "set");
+            mockSet.mockRejectedValueOnce(undefined);
+
+            const result = await addRoleToDatabase(guildId, role);
+
+            expect(mockSet).toHaveBeenCalled();
+
+            expect(result).toBe("something went wrong");
+        });
+    });
+
+    describe("Testing removeRoleFromDatabase", () => {
+        test("removeRoleFromDatabase should remove servers/[guild id]/roles/[role name] from the database", async () => {
+            const role = { name: "role-name", id: "role-id" } as unknown as discordJS.Role;
+            const guildId = "guild-id";
+
+            const mockRemove = jest.spyOn(firebase, "remove");
+
+            const result = await removeRoleFromDatabase(guildId, role);
+
+            expect(mockRemove).toHaveBeenCalled();
+            expect(mockRemove.mock.calls[0][0]).toBe(`servers/${guildId}/roles/${role.name}`);
+
+            expect(result).toBe("role successfully removed");
+        });
+
+        test("removeRoleFromDatabase should return \"something went wrong\" if `remove` fails", async () => {
+            const role = { name: "role-name", id: "role-id" } as unknown as discordJS.Role;
+            const guildId = "guild-id";
+
+            const mockRemove = jest.spyOn(firebase, "remove");
+            mockRemove.mockRejectedValueOnce(undefined);
+
+            const result = await removeRoleFromDatabase(guildId, role);
+
+            expect(mockRemove).toHaveBeenCalled();
+
+            expect(result).toBe("something went wrong");
+        });
+    });
+
 });

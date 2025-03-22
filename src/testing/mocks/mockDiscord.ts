@@ -70,14 +70,14 @@ export class MockDiscord {
                         if (roleObj) {
                             this.memberRoles.set(roleObj.id, roleObj)
                         } else {
-                            const newRole = { 
-                                id: `${(role).length}`, 
+                            const newRole = {
+                                id: `${(role).length}`,
                                 name: role,
                                 color: 0x000000
                             }
                             this.guild.roles.create(newRole);
                             this.memberRoles.set(role, newRole)
-                        }             
+                        }
                     } else {
                         this.memberRoles.set(role.id, role);
                     }
@@ -125,7 +125,7 @@ export class MockDiscord {
         this.guild.roles.fetch = jest.fn(async (id) => this.roles.get(id)) as jest.Mock
         this.guild.roles.create = jest.fn().mockImplementation((options: any) => {
             // console.log("create role called with options: " + options.name + " " + options.color);
-            const newRole = { 
+            const newRole = {
                 id: `${(options.name as string).length}`, 
                 name: options.name,
                 color: options.color || 0x000000,

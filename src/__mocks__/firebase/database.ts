@@ -11,7 +11,7 @@ const mockSnapshot = {
 mockFirebaseDatabase.get = jest.fn().mockResolvedValue(mockSnapshot);
 
 mockFirebaseDatabase.child = jest.fn((_, path): DatabaseReference => {
-    return `servers/${path}` as unknown as DatabaseReference;
+    return `${path}` as unknown as DatabaseReference;
 });
 mockFirebaseDatabase.ref = jest.fn().mockReturnValue('mock-ref');
 mockFirebaseDatabase.set = jest.fn().mockResolvedValue(undefined);

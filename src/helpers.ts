@@ -25,15 +25,9 @@ export function getTimestampFromSnowflake(snowflake: Snowflake): number {
  * @returns a string containing the status of the operation
  */
 export async function addRoleToDatabase(guildId: string, role: Role): Promise<string> {
-    // if no role is given, exit
-    if (!role){
-        return "Invalid role specified";
-    }
+    let rolesReference = ref(db);
     
-    let rolesReference = ref(db, `servers/${guildId}/roles`);
-    let setPromise = set(child(rolesReference, role.name), role.id);
-    
-    return await setPromise.then((): string => {
+    return await set(child(rolesReference, `servers/${guildId}/roles/${role.name}`), role.id).then((): string => {
         return "role successfully set"
     }).catch((): string => {
         return "something went wrong";
@@ -48,14 +42,9 @@ export async function addRoleToDatabase(guildId: string, role: Role): Promise<st
  * @returns a string containing the status of the operation
  */
 export async function removeRoleFromDatabase(guildId: string, role: Role): Promise<string> {
-    // if no role is given, exit
-    if (!role){
-        return "Invalid role specified";
-    }
+    let rolesReference = ref(db);
     
-    let rolesReference = ref(db, `servers/${guildId}/roles`);
-    
-    return await remove(child(rolesReference, role.name)).then((): string => {
+    return await remove(child(rolesReference, `servers/${guildId}/roles/${role.name}`)).then((): string => {
         return "role successfully removed"
     }).catch((): string => {
         return "something went wrong";
