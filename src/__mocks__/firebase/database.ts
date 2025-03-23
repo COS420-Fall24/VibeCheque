@@ -1,11 +1,12 @@
-import { DatabaseReference } from "firebase/database";
+import { DatabaseReference, DataSnapshot } from "firebase/database";
 
 const firebaseDatabase = jest.requireActual<typeof import("firebase/database")>("firebase/database");
 const mockFirebaseDatabase = jest.createMockFromModule<typeof import("firebase/database")>("firebase/database");
 
 const mockSnapshot = {
     exists: () => true,
-    val: () => ({ count: 2 })
+    val: () => ({ count: 2 }),
+    forEach: () => true
 };
 
 mockFirebaseDatabase.get = jest.fn().mockResolvedValue(mockSnapshot);
@@ -17,5 +18,13 @@ mockFirebaseDatabase.ref = jest.fn().mockReturnValue('mock-ref');
 mockFirebaseDatabase.set = jest.fn().mockResolvedValue(undefined);
 mockFirebaseDatabase.remove = jest.fn().mockResolvedValue(undefined);
 
+class mockDataSnapshot {
+    forEach: jest.Mock;
+    constructor() {
+        this.forEach = jest.fn().mockReturnValue(true);
+    }
+}
+
+mockFirebaseDatabase.DataSnapshot = mockDataSnapshot as unknown as typeof DataSnapshot;
 
 module.exports = mockFirebaseDatabase;

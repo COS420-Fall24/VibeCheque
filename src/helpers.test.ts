@@ -11,7 +11,7 @@ describe("Testing helper functions", () => {
         process.env.DISCORD_TOKEN = "TEST TOKEN";
         
         // jest.spyOn(console, "log").mockImplementation(() => {});
-        jest.spyOn(console, "error").mockImplementation(() => {});
+        // jest.spyOn(console, "error").mockImplementation(() => {});
     });
 
     describe("Testing getTimestampFromSnowflake", () => {
@@ -181,6 +181,22 @@ describe("Testing helper functions", () => {
 
             const mockFetch = jest.spyOn(discord.getUser().client.guilds, "fetch");
             mockFetch.mockRejectedValue("mock-err")
+
+            const result = await cleanupMoods(discord.getUser().client, guildId);
+
+            expect(result).toBe(expectedResponse);
+        });
+
+        test("cleanupMoods should return \"all unused roles removed\"", async () => {
+            const discord = new MockDiscord({ command: "" });
+            const guildId = discord.getGuild().id;
+            const expectedResponse = "all unused roles removed";
+
+            const mockFetch = jest.spyOn(discord.getUser().client.guilds, "fetch");
+
+            // issue with ts and overloads
+            // @ts-ignore
+            mockFetch.mockResolvedValue(discord.getGuild());
 
             const result = await cleanupMoods(discord.getUser().client, guildId);
 

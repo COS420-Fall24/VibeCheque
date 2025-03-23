@@ -104,9 +104,9 @@ export async function removeRoleIfUnused(role: Role | null): Promise<string> {
  */
 export async function cleanupMoods(client: Client, guildId: string): Promise<string> {
     return client.guilds.fetch(guildId).then(async (guild) => {
-        let rolesReference = ref(db, `servers/${guildId}/roles`);
+        let rolesReference = ref(db);
         
-        let snapshot = await get(rolesReference);
+        let snapshot = await get(child(rolesReference, `servers/${guildId}/roles`));
 
         snapshot.forEach((roleSnapshot) => {
             let roleSnowflake: Snowflake = roleSnapshot.val();
