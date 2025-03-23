@@ -2,7 +2,9 @@ import {
     CacheType,
     ChatInputCommandInteraction,
     EmbedBuilder,
-    MessageContextMenuCommandInteraction
+    MessageContextMenuCommandInteraction,
+    MessageFlags,
+    PermissionsBitField
 } from "discord.js";
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
@@ -216,7 +218,12 @@ export async function requestAnonymousClarification(interaction: MessageContextM
     }
 }
 export async function toggleBot(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-    await interaction.deferReply({ flags:64});
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    if (!(interaction.member?.permissions as PermissionsBitField).has(PermissionsBitField.Flags.ManageGuild)) {
+        interaction.editReply('You need "Manage Server" permission to toggle the bot!');
+        return;
+    }
 
     const guildId = interaction.guildId!; // Get the guild ID
     const dbRef = ref(db, `servers/${guildId}/botStatus`);
