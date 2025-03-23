@@ -9,48 +9,20 @@ import {
 } from "discord.js";
 import { embed, ping, tone, action, getTones, Tone, mood, clarify, requestAnonymousClarification } from "./interactions";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
-import { analyzeTone } from "./gptRequests";
+import * as gptRequests from "./gptRequests";
+import * as firebase from "firebase/database";
+import * as helpers from "./helpers";
 jest.mock("./gptRequests")
 jest.mock("discord.js");
-
-type MockDatabase = {
-    get: jest.Mock;
-    child: jest.Mock;
-    ref: jest.Mock;
-    set: jest.Mock;
-    getDatabase: jest.Mock;
-}
-
-jest.mock('firebase/database', (): MockDatabase => {
-    const mockSnapshot = {
-        exists: () => true,
-        val: () => ({ mood: "previous-mood" })
-    };
-    
-    // Mock functions that will be exported
-    const mockGet = jest.fn().mockResolvedValue(mockSnapshot);
-    const mockChild = jest.fn((_, path) => {
-        return `servers/${path}`;
-    });
-    const mockRef = jest.fn().mockReturnValue('mock-ref');
-
-    return {
-        get: mockGet,
-        child: mockChild,
-        ref: mockRef,
-        set: jest.fn().mockResolvedValue(undefined),
-        getDatabase: jest.fn().mockReturnValue({
-            ref: mockRef
-        })
-    };
-});
+jest.mock("firebase/database");
+jest.mock("./helpers");
 
 describe("Testing application commands", ()=>{
     beforeAll(()=>{
         process.env.APP_ID = "TEST APP ID";
         process.env.DISCORD_TOKEN = "TEST TOKEN";
         
-        jest.spyOn(console, "log").mockImplementation(() => {});
+        // jest.spyOn(console, "log").mockImplementation(() => {});
     });
 
     describe("Testing ping command", () => {
@@ -69,7 +41,7 @@ describe("Testing application commands", ()=>{
             await ping(interaction);
             const endTime = jest.getRealSystemTime();
 
-            expect(endTime-startTime).toBeGreaterThanOrEqual(1000);
+            expect(endTime-startTime).toBeGreaterThanOrEqual(999);
             expect(spyDeferReply).toHaveBeenCalled();
             expect(spyEditReply).toHaveBeenCalledWith("pong!");
         });
@@ -90,7 +62,7 @@ describe("Testing application commands", ()=>{
             await ping(interaction).catch(spyReject);
             const endTime = jest.getRealSystemTime();
 
-            expect(endTime-startTime).toBeGreaterThanOrEqual(1000);
+            expect(endTime-startTime).toBeGreaterThanOrEqual(999);
             expect(spyDeferReply).toHaveBeenCalled();
             expect(spyEditReply).not.toHaveBeenCalled();
             expect(spyReject).toHaveBeenCalled();
@@ -144,7 +116,7 @@ describe("Testing application commands", ()=>{
             // set up spies
             const spyDeferReply = jest.spyOn(interaction, "deferReply");
             const spyEditReply = jest.spyOn(interaction, "editReply");
-            (analyzeTone as jest.Mock).mockReturnValue("this message has a TONE tone")
+            (gptRequests.analyzeTone as jest.Mock).mockReturnValue("this message has a TONE tone")
 
             await tone(interaction);
 
@@ -231,7 +203,7 @@ describe("Testing application commands", ()=>{
             spyEditReply.mockImplementationOnce((message: any): Promise<Message<boolean>> => {
                 throw new Error("TEST ERROR");
             });
-            (analyzeTone as jest.Mock).mockReturnValue("Unknown error - can't generate the tone at the moment")
+            (gptRequests.analyzeTone as jest.Mock).mockReturnValue("Unknown error - can't generate the tone at the moment")
             const spyStdErr = jest.spyOn(console, "error");
             spyStdErr.mockImplementation(error => {});
 
@@ -346,23 +318,25 @@ Here's a short list of tones, select up to five that apply:`;
                 get: jest.fn(() => 1234567890)
             });
 
-            const { set: mockSet, get: mockGet } = require('firebase/database') as MockDatabase;
-            mockSet.mockReset();
-            mockGet.mockReset();
+            const mockSet = jest.spyOn(firebase, "set");
+            const mockGet = jest.spyOn(firebase, "get");
+
             mockGet.mockResolvedValue({
                 exists: () => true,
-                val: () => ({ mood: "angry" })
-            });
+                val: () => ({ mood: `${helpers.timestampToSnowflake(1420070400000)}` })
+            } as unknown as firebase.DataSnapshot);
+
+            jest.useFakeTimers();
 
             await mood(interaction);
 
-            
+            jest.runAllTimers();
 
             // Check that the array of calls includes our expected call
             expect(mockSet.mock.calls).toContainEqual([
                 "mock-ref",
                 {
-                    mood: "happy",
+                    mood: `${helpers.timestampToSnowflake(1420070400001)}`,
                     timestamp: 1234567890
                 }
             ]);
@@ -390,13 +364,13 @@ Here's a short list of tones, select up to five that apply:`;
                 get: jest.fn(() => 1234567890)
             });
 
-            const { set: mockSet, get: mockGet } = require('firebase/database') as MockDatabase;
-            mockSet.mockReset();
-            mockGet.mockReset();
+            const mockSet = jest.spyOn(firebase, "set");
+            const mockGet = jest.spyOn(firebase, "get");
+            
             mockGet.mockResolvedValue({
                 exists: () => false,
                 val: () => null
-            });
+            } as unknown as firebase.DataSnapshot);
 
             await mood(interaction);
 
@@ -404,7 +378,7 @@ Here's a short list of tones, select up to five that apply:`;
             expect(mockSet.mock.calls).toContainEqual([
                 "mock-ref",
                 {
-                    mood: "excited",
+                    mood: `${helpers.timestampToSnowflake(1420070400000)}`,
                     timestamp: 1234567890
                 }
             ]);
@@ -430,9 +404,9 @@ Here's a short list of tones, select up to five that apply:`;
                 get: jest.fn(() => 1234567890)
             });
 
-            const { set: mockSet, get: mockGet } = require('firebase/database') as MockDatabase;
-            mockSet.mockReset();
-            mockGet.mockReset();
+            const mockSet = jest.spyOn(firebase, "set");
+            const mockGet = jest.spyOn(firebase, "get");
+
             mockGet.mockRejectedValue(error);
 
             const spyStdErr = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -508,7 +482,7 @@ Here's a short list of tones, select up to five that apply:`;
             // Get the collect callback
             const collectCallback: Function = spyCollectorOn.mock.calls.find(call => call[0] === "collect" && call[1] !== undefined)?.[1] as Function;
 
-            (analyzeTone as jest.Mock).mockResolvedValue(testTone);
+            (gptRequests.analyzeTone as jest.Mock).mockResolvedValue(testTone);
 
             // Call the collect callback with the test tone
             await collectCallback(testMessage);

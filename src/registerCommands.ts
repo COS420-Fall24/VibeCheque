@@ -1,6 +1,7 @@
 import "dotenv/config";
-import { ApplicationCommandType, REST, Routes, ApplicationCommandOptionType } from "discord.js";
+import { REST, Routes, ApplicationCommandOptionType } from "discord.js";
 
+// define a ts type for discord commands
 declare type command = {
     name: string;
     description?: string;
@@ -26,6 +27,7 @@ export async function updateCommands(commands: command[]): Promise<void> {
         process.env.DISCORD_TOKEN as string,
     );
 
+    // attempt to push the new commands to discord
     try {
         console.log("refreshing commands");
 
@@ -41,6 +43,7 @@ export async function updateCommands(commands: command[]): Promise<void> {
     }
 }
 
+// enter the data for each command the bot should register here
 updateCommands([
     {
         name: "ping",

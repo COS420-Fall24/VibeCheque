@@ -1,96 +1,122 @@
-import { CacheType, ChatInputCommandInteraction} from "discord.js";
+import { CacheType, ChatInputCommandInteraction, Client, FetchMembersOptions, Guild, Role, Snowflake} from "discord.js";
 import db from './firebase'; // Import from your firebase.ts file
-import { ref, set, get, child, remove, DatabaseReference, DataSnapshot }  from "firebase/database";
+import { ref, set, get, child, remove } from "firebase/database";
 
-export async function updateOldRoleInServer(interaction: ChatInputCommandInteraction<CacheType>, roleName: string | undefined): Promise<string>{
+// the minimum amount of time a mood can be in a server before it gets deleted automatically
+export const MINIMUM_MOOD_LIFESPAN: number = 0.5 * (1000 * 60);
 
-    if (roleName === "" || roleName === null || roleName === undefined){
-        return "No role specified"
-    }
-
-    var dbRef = ref(db);
-    if (!interaction.guild){
-        return "No server found";
-    } else {
-        var roleObject = null
-        await get(child(dbRef, 'servers/' + interaction.guildId + '/roles/' + roleName)).then((snapshot) => {
-            if (snapshot.exists()) {
-                roleObject = snapshot.val();
-            } else {
-              console.log("No data available when getting role");
-            }
-          }).catch((error) => {
-            console.error(error);
-        });
-
-        if (roleObject !== null){
-            let roleCount = roleObject["count"];
-            if (roleCount > 1){
-                await set(ref(db, 'servers/' + interaction.guildId + '/roles/' + roleName), {
-                    count: roleCount - 1 
-                })
-                return "Decreased role count";
-            } else if (roleCount === 1){
-                return removeOldRoleInServer(interaction, roleName);
-            } else {
-                return "No role found";
-            }
-        } else {
-            return "Role object null";
-        }
-
-    }
+/**
+ * extracts the timestamp field of discord's Snowflake structure
+ * 
+ * https://discord.com/developers/docs/reference#snowflakes
+ * 
+ * @param snowflake the snowflake to extract the timestamp from
+ * @returns the timestamp of the snowflake
+ */
+export function getTimestampFromSnowflake(snowflake: Snowflake): number {
+    return Number((BigInt(snowflake) >> 22n) + 1420070400000n);
 }
 
-export async function removeOldRoleInServer(interaction: ChatInputCommandInteraction<CacheType>, roleName: string | undefined): Promise<string>{
-
-    if (roleName === "" || roleName === null || roleName === undefined){
-        return "No role specified"
-    }
-
-    if (!interaction.guild){
-        return "No server found";
-    } else {
-        interaction.guild.roles.cache.find(role => role.name === roleName)!.delete();
-        await remove(ref(db, 'servers/' + interaction.guildId + '/roles/' + roleName));
-        return "Removed role";
-    }
+/**
+ * fills the timestamp field of discord's Snowflake structure
+ * 
+ * https://discord.com/developers/docs/reference#snowflakes
+ * 
+ * @param timestamp the unix timestamp of the snowflake
+ * @returns the new snowflake
+ */
+export function timestampToSnowflake(timestamp: number): string {
+    return (BigInt(timestamp - 1420070400000) << 22n).toString();
 }
 
-export async function updateNewRoleInServer(interaction: ChatInputCommandInteraction<CacheType>, roleName: string | undefined): Promise<string>{
+/**
+ * adds a role to the database under a given guild
+ * 
+ * @param guildId the ID of the server containing the role
+ * @param roleName the name of the role to add to the database
+ * @returns a string containing the status of the operation
+ */
+export async function addRoleToDatabase(guildId: string, role: Role): Promise<string> {
+    let rolesReference = ref(db);
+    
+    return await set(child(rolesReference, `servers/${guildId}/roles/${role.name}`), role.id).then((): string => {
+        return "role successfully set"
+    }).catch((): string => {
+        return "something went wrong";
+    });
+}
 
-    if (roleName === "" || roleName === null || roleName === undefined){
-        return "No role specified"
+/**
+ * removes a role from the VC database associated with a given guild
+ * 
+ * @param guildId the ID of the server containing the role
+ * @param roleName the name of the role to add to the database
+ * @returns a string containing the status of the operation
+ */
+export async function removeRoleFromDatabase(guildId: string, role: Role): Promise<string> {
+    let rolesReference = ref(db);
+    
+    return await remove(child(rolesReference, `servers/${guildId}/roles/${role.name}`)).then((): string => {
+        return "role successfully removed"
+    }).catch((): string => {
+        return "something went wrong";
+    });
+}
+
+/**
+ * removes a role from the VC database and guild if it is unused
+ * 
+ * @param guildId the ID of the server containing the role
+ * @param roleName the name of the role to add to the database
+ * @returns a string containing the status of the operation
+ */
+export async function removeRoleIfUnused(role: Role | null): Promise<string> {
+    // if no role is given, exit
+    if (!role){
+        return "Invalid role specified";
     }
+    
+    let timeDifference = Date.now() - getTimestampFromSnowflake(role.id);
 
-    var dbRef = ref(db);
-    if (!interaction.guild){
-        return "No server found";
-    } else {
-        var roleObject = null
-        await get(child(dbRef, 'servers/' + interaction.guildId + '/roles/' + roleName)).then((snapshot) => {
-            if (snapshot.exists()) {
-                roleObject = snapshot.val();
-            } else {
-              console.log("No data available when getting role");
-            }
-          }).catch((error) => {
-            console.error(error);
+    if (timeDifference < MINIMUM_MOOD_LIFESPAN) {
+        return "role is too young to be removed"
+    }
+    
+    
+    return await role.guild.members.fetch().then((members): string => {
+        // console.log(members);
+        if (members.some(member => member.roles.cache.some(memberRole => memberRole.id === role.id))) {
+            return "role still in use"
+        }
+
+        console.log(`removing role ${role.id} (${role.name})`);
+        role.delete("Role out of use");
+        removeRoleFromDatabase(role.guild.id, role);
+        return "role removed"
+    });
+}
+
+/**
+ * removes all unused moods
+ * 
+ * @param guildId the ID of the server to clean
+ * @returns a string containing the status of the operation
+ */
+export async function cleanupMoods(client: Client, guildId: string): Promise<string> {
+    return client.guilds.fetch(guildId).then(async (guild) => {
+        let rolesReference = ref(db);
+        
+        let snapshot = await get(child(rolesReference, `servers/${guildId}/roles`));
+
+        snapshot.forEach((roleSnapshot) => {
+            let roleSnowflake: Snowflake = roleSnapshot.val();
+
+            guild.roles.fetch(roleSnowflake).then(removeRoleIfUnused);
         });
 
-        if (roleObject !== null){
-            let roleCount = roleObject["count"];
-            await set(ref(db, 'servers/' + interaction.guildId + '/roles/' + roleName), {
-                count: roleCount + 1 
-            })
-        } else {
-            await set(ref(db, 'servers/' + interaction.guildId + '/roles/' + roleName), {
-                count: 1
-            })
-        }
-        return "Updated role count";
-
-    }
-
-
+        return "all unused roles removed";
+    }).catch((error) => {
+        console.error(error);
+        return "Bot does not have access to the specified guild";
+    });
 }
