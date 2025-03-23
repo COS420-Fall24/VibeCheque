@@ -1,16 +1,11 @@
 import "dotenv/config";
-import { analyzeTone }  from "./gptRequests";
-import { 
-    Client, 
-    GatewayIntentBits, 
-    Events, 
-    PermissionsBitField, 
-    EmbedBuilder, 
-    Message, 
-    Interaction 
+import {
+    Client,
+    GatewayIntentBits,
+    Events,
+    Message,
 } from "discord.js";
-import { clarify, embed, ping, tone, requestAnonymousClarification, mood, toggleBot } from "./interactions"
-import serverConfigManager from "./serverConfigManager";
+import { clarify, embed, ping, tone, requestAnonymousClarification, mood, toggleBot, inDepthClarification, postemptiveToneAdd, getTones, action } from "./interactions"
 import { get, ref } from "firebase/database";
 import database from "./firebase";
 import { cleanupMoods } from "./helpers";
@@ -78,14 +73,18 @@ export async function launchBot(): Promise<Client> {
             }
 
             // If the bot is active, process the interaction
-            if (interaction.isChatInputCommand()) { // Slash command
+            if (interaction.isChatInputCommand()) { // slash command
                 if (interaction.commandName === "ping") await ping(interaction);
                 if (interaction.commandName === "embed") await embed(interaction);
+                if (interaction.commandName === "action") await action(interaction);
+                if (interaction.commandName === "list-tones") await getTones(interaction);
                 if (interaction.commandName === "mood") await mood(interaction);
                 if (interaction.commandName === "togglebot") await toggleBot(interaction);
-            } else if (interaction.isMessageContextMenuCommand()) { // Command from the "apps" menu when clicking on a message
+            } else if (interaction.isMessageContextMenuCommand()) { // command from the "apps" menu when clicking on a message
                 if (interaction.commandName === "Tone") await tone(interaction);
+                if (interaction.commandName === "Add Tone") await postemptiveToneAdd(interaction);
                 if (interaction.commandName === "Clarify") await clarify(interaction);
+                if (interaction.commandName === "In-Depth Clarification") await inDepthClarification(interaction);
                 if (interaction.commandName === "Request Anonymous Clarification") await requestAnonymousClarification(interaction);
             } else {
                 console.log(interaction);
