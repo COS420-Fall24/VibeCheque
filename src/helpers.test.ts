@@ -1,7 +1,7 @@
 import * as discordJS from "discord.js";
 import * as firebase from "firebase/database";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
-import { addRoleToDatabase, getTimestampFromSnowflake, MINIMUM_MOOD_LIFESPAN, removeRoleFromDatabase, removeRoleIfUnused, timestampToSnowflake } from "./helpers";
+import { addRoleToDatabase, cleanupMoods, getTimestampFromSnowflake, MINIMUM_MOOD_LIFESPAN, removeRoleFromDatabase, removeRoleIfUnused, timestampToSnowflake } from "./helpers";
 jest.mock("discord.js");
 jest.mock("firebase/database");
 
@@ -11,6 +11,7 @@ describe("Testing helper functions", () => {
         process.env.DISCORD_TOKEN = "TEST TOKEN";
         
         // jest.spyOn(console, "log").mockImplementation(() => {});
+        jest.spyOn(console, "error").mockImplementation(() => {});
     });
 
     describe("Testing getTimestampFromSnowflake", () => {
@@ -150,8 +151,6 @@ describe("Testing helper functions", () => {
 
             const result = await removeRoleIfUnused(role);
 
-            console.log(Date.now() - getTimestampFromSnowflake(role.id));
-
             expect(result).toBe(expectedResponse);
         });
 
@@ -170,11 +169,22 @@ describe("Testing helper functions", () => {
 
             const result = await removeRoleIfUnused(role);
 
-            console.log(Date.now() - getTimestampFromSnowflake(role.id));
-
             expect(result).toBe(expectedResponse);
         });
     });
 
-    
+    describe("Testing cleanupMoods", () => {
+        test("cleanupMoods should return \"Bot does not have access to the specified guild\" if fetching the guild throws an error", async () => {
+            const discord = new MockDiscord({ command: "" });
+            const guildId = "0";
+            const expectedResponse = "Bot does not have access to the specified guild";
+
+            const mockFetch = jest.spyOn(discord.getUser().client.guilds, "fetch");
+            mockFetch.mockRejectedValue("mock-err")
+
+            const result = await cleanupMoods(discord.getUser().client, guildId);
+
+            expect(result).toBe(expectedResponse);
+        });
+    });
 });

@@ -158,6 +158,10 @@ export class MockDiscord {
         return this.user;
     }
 
+    public getClient(): User {
+        return this.user;
+    }
+
     public getGuild(): Guild {
         return this.guild;
     }

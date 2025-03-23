@@ -103,10 +103,7 @@ export async function removeRoleIfUnused(role: Role | null): Promise<string> {
  * @returns a string containing the status of the operation
  */
 export async function cleanupMoods(client: Client, guildId: string): Promise<string> {
-    let guild = await client.guilds.fetch(guildId);
-    // if no role is given, exit
-    if (guild){
-    
+    return client.guilds.fetch(guildId).then(async (guild) => {
         let rolesReference = ref(db, `servers/${guildId}/roles`);
         
         let snapshot = await get(rolesReference);
@@ -118,7 +115,8 @@ export async function cleanupMoods(client: Client, guildId: string): Promise<str
         });
 
         return "all unused roles removed";
-    } else {
+    }).catch((error) => {
+        console.error(error);
         return "Bot does not have access to the specified guild";
-    }
+    });
 }
