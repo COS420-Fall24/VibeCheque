@@ -217,7 +217,7 @@ export async function requestAnonymousClarification(interaction: MessageContextM
 }
 
 export async function toggleBot(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags:64});
 
     const guildId = interaction.guildId!; // Get the guild ID
     const dbRef = ref(db, `servers/${guildId}/botStatus`);
@@ -229,6 +229,8 @@ export async function toggleBot(interaction: ChatInputCommandInteraction<CacheTy
 
         if (snapshot.exists() && snapshot.val() === "active") {
             newStatus = "inactive"; // If active, set to inactive
+        } else{
+            newStatus = "active";
         }
 
         // Update the bot status in the Realtime Database
