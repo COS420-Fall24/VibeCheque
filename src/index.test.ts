@@ -7,7 +7,7 @@ describe("Testing slash commands", ()=>{
         process.env.APP_ID = "TEST APP ID";
         process.env.DISCORD_TOKEN = "TEST TOKEN";
         
-        jest.spyOn(console, "log").mockImplementation(() => {});
+        // jest.spyOn(console, "log").mockImplementation(() => {});
     });
 
 	test("index.ts should run launchBot() from discordApp.ts", async ()=>{
