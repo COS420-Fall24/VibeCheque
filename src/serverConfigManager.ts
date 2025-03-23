@@ -12,7 +12,7 @@ class ServerConfigManager {
     private configPath: string;
     private serverStates: Map<string, ServerConfig>;
 
-    constructor(configPath: string = './server-configs.json') {
+    constructor(configPath: string = './res/server-configs.json') {
         this.configPath = path.resolve(configPath);
         this.serverStates = new Map();
         

@@ -4,7 +4,7 @@ import path from 'path';
 import { ServerConfigManager } from './serverConfigManager';
 
 describe('ServerConfigManager', () => {
-    const TEST_CONFIG_PATH = './test-server-configs.json';
+    const TEST_CONFIG_PATH = './res/test-server-configs.json';
     let serverConfigManager: ServerConfigManager;
     
     beforeEach(() => {
