@@ -7,7 +7,8 @@ import {
 import { analyzeTone, analyzeMoodColor } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
 import { ref, set, get, child } from "firebase/database";
-import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers"
+import { updateOldRoleInServer, updateNewRoleInServer} from "./helpers";
+import { getServerSetting, toggleServerSetting } from "./serverSetting";
 
 /**
  * the callback to a `ping` interaction
@@ -211,6 +212,37 @@ export async function requestAnonymousClarification(interaction: MessageContextM
         await interaction.editReply({
             //ephemeral: true,
             content: "There was an error handling the clarification request",
+        });
+    }
+}
+
+export async function toggleBot(interaction: command) {
+    await interaction.deferReply({ ephemeral: true });
+
+    const guildId = interaction.guildId!; // Get the guild ID
+    const dbRef = ref(db, `servers/${guildId}/botStatus`);
+
+    try {
+        // Get the current bot status from the Realtime Database
+        const snapshot = await get(dbRef);
+        let newStatus = "active"; // Default to 'active'
+
+        if (snapshot.exists() && snapshot.val() === "active") {
+            newStatus = "inactive"; // If active, set to inactive
+        }
+
+        // Update the bot status in the Realtime Database
+        await set(dbRef, newStatus);
+
+        // Respond with a confirmation message
+        interaction.editReply({
+            content: `The bot has been turned ${newStatus === "active" ? "on" : "off"} for this server.`,
+        });
+
+    } catch (error) {
+        console.error("Error toggling bot status:", error);
+        interaction.editReply({
+            content: "There was an error while toggling the bot's status. Please try again later.",
         });
     }
 }

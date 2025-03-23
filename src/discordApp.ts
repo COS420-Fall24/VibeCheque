@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Client, GatewayIntentBits, Events } from "discord.js";
-import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
+import { clarify, embed, ping, tone, requestAnonymousClarification, mood, toggleBot } from "./interactions"
 
 export async function launchBot(): Promise<Client> {
     // the client has to declare the features it uses up front so discord.js kno9ws if it can
@@ -49,6 +49,7 @@ export async function launchBot(): Promise<Client> {
             if (interaction.commandName === "ping") await ping(interaction);
             if (interaction.commandName === "embed") await embed(interaction);
             if (interaction.commandName === "mood") await mood(interaction);
+            if (interaction.commandName === "togglebot") await toggleBot(interaction);
         } else if (interaction.isMessageContextMenuCommand()) { // command from the "apps" menu when clicking on a message
             if (interaction.commandName === "Tone") await tone(interaction);
             if (interaction.commandName === "Clarify") await clarify(interaction);
