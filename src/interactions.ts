@@ -215,7 +215,6 @@ export async function requestAnonymousClarification(interaction: MessageContextM
         });
     }
 }
-
 export async function toggleBot(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply({ flags:64});
 
@@ -229,9 +228,12 @@ export async function toggleBot(interaction: ChatInputCommandInteraction<CacheTy
 
         if (snapshot.exists() && snapshot.val() === "active") {
             newStatus = "inactive"; // If active, set to inactive
-        } else{
+        } else {
             newStatus = "active";
         }
+
+        // Log the new status for debugging
+        console.log(`Toggling bot status to: ${newStatus}`);
 
         // Update the bot status in the Realtime Database
         await set(dbRef, newStatus);
@@ -240,7 +242,6 @@ export async function toggleBot(interaction: ChatInputCommandInteraction<CacheTy
         interaction.editReply({
             content: `The bot has been turned ${newStatus === "active" ? "on" : "off"} for this server.`,
         });
-
     } catch (error) {
         console.error("Error toggling bot status:", error);
         interaction.editReply({
@@ -248,3 +249,55 @@ export async function toggleBot(interaction: ChatInputCommandInteraction<CacheTy
         });
     }
 }
+// export async function toggleBot(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+//     await interaction.deferReply({ flags: 64 }); // Defer the reply to allow time for the operation
+
+//     const guildId = interaction.guildId!; // Get the guild ID
+
+//     try {
+//         // Use the helper functions to get and toggle the bot status
+//         const newStatus = await toggleServerSetting(guildId); // Toggle the bot status
+
+//         // Respond with a confirmation message
+//         interaction.editReply({
+//             content: `The bot has been turned ${newStatus === "active" ? "on" : "off"} for this server.`,
+//         });
+//     } catch (error) {
+//         console.error("Error toggling bot status:", error);
+//         interaction.editReply({
+//             content: "There was an error while toggling the bot's status. Please try again later.",
+//         });
+//     }
+// }
+// export async function toggleBot(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+//     await interaction.deferReply({ flags:64});
+
+//     const guildId = interaction.guildId!; // Get the guild ID
+//     const dbRef = ref(db, `servers/${guildId}/botStatus`);
+
+//     try {
+//         // Get the current bot status from the Realtime Database
+//         const snapshot = await get(dbRef);
+//         let newStatus = "active"; // Default to 'active'
+
+//         if (snapshot.exists() && snapshot.val() === "active") {
+//             newStatus = "inactive"; // If active, set to inactive
+//         } else{
+//             newStatus = "active";
+//         }
+
+//         // Update the bot status in the Realtime Database
+//         await set(dbRef, newStatus);
+
+//         // Respond with a confirmation message
+//         interaction.editReply({
+//             content: `The bot has been turned ${newStatus === "active" ? "on" : "off"} for this server.`,
+//         });
+
+//     } catch (error) {
+//         console.error("Error toggling bot status:", error);
+//         interaction.editReply({
+//             content: "There was an error while toggling the bot's status. Please try again later.",
+//         });
+//     }
+// }

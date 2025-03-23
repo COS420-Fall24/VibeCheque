@@ -59,11 +59,11 @@ export async function launchBot(): Promise<Client> {
 
             // If the bot is inactive, ignore the interaction and reply with a message
             if (botStatus === "inactive") {
-
-                if(interaction.isCommand()){
-                return interaction.reply({
-                    content: "Sorry, the bot is currently disabled for this server.",
-                    flags: 64, // Make it ephemeral
+                
+                if(interaction.isCommand() && interaction.commandName != "togglebot"){
+                    return interaction.reply({
+                        content: "Sorry, the bot is currently disabled for this server.",
+                        flags: 64, // Make it ephemeral
                 });
             }
             }
