@@ -1,8 +1,9 @@
-import { Client, ClientOptions, RESTOptions, UserFlagsBitField } from "discord.js";
+import { Client, ClientOptions, GuildManager, RESTOptions, UserFlagsBitField } from "discord.js";
 
 const discordJS = jest.requireActual<typeof import("discord.js")>("discord.js");
 const mockDiscordJS = jest.createMockFromModule<typeof import("discord.js")>("discord.js");
 
+mockDiscordJS.MessageFlags = discordJS.MessageFlags;
 mockDiscordJS.EmbedBuilder = discordJS.EmbedBuilder;
 mockDiscordJS.ApplicationCommandOptionType = discordJS.ApplicationCommandOptionType;
 mockDiscordJS.GatewayIntentBits = discordJS.GatewayIntentBits;
@@ -32,12 +33,29 @@ class MockREST extends discordJS.REST {
     }
 }
 
+
+class MockGuildManager {
+    create: jest.Mock;
+    fetch: jest.Mock;
+    setIncidentActions: jest.Mock;
+    widgetImageURL: jest.Mock;
+
+    constructor() {
+        this.create = jest.fn().mockResolvedValue(null);
+        this.fetch = jest.fn().mockResolvedValue(new mockDiscordJS.Collection());
+        this.setIncidentActions = jest.fn().mockResolvedValue(null);
+        this.widgetImageURL = jest.fn().mockResolvedValue(null);
+    }
+}
+
 // @ts-ignore
 class MockClient {
     _ready: true = true;
     on: jest.Mock;
     options: ClientOptions;
     token: string;
+    guilds: GuildManager;
+
     constructor(options?: ClientOptions) {
         this.on = MockClient.prototype.on;
         this.login = MockClient.prototype.login;
@@ -47,6 +65,7 @@ class MockClient {
             } as any
         }
         this.token = "test-token";
+        this.guilds = new MockGuildManager() as unknown as GuildManager;
     }
 
     public login(token: string): Promise<void> {
@@ -98,5 +117,6 @@ class MockClientUser {
 mockDiscordJS.REST = MockREST;
 mockDiscordJS.Client = MockClient as unknown as typeof discordJS.Client;
 mockDiscordJS.ClientUser = MockClientUser as unknown as typeof discordJS.ClientUser;
+mockDiscordJS.GuildManager = MockGuildManager as unknown as typeof discordJS.GuildManager;
 
 module.exports = mockDiscordJS;
