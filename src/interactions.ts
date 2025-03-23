@@ -216,7 +216,7 @@ export async function requestAnonymousClarification(interaction: MessageContextM
     }
 }
 
-export async function toggleBot(interaction: command) {
+export async function toggleBot(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     await interaction.deferReply({ ephemeral: true });
 
     const guildId = interaction.guildId!; // Get the guild ID
