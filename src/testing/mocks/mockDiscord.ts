@@ -24,6 +24,7 @@ import {
   UserFlags,
   GuildCreateOptions
 } from "discord.js";
+import { timestampToSnowflake } from "../../helpers";
 
 type MockDiscordOptions = {
     command: string,
@@ -71,12 +72,10 @@ export class MockDiscord {
                             this.memberRoles.set(roleObj.id, roleObj)
                         } else {
                             const newRole = {
-                                id: `${(role).length}`,
                                 name: role,
                                 color: 0x000000
                             }
                             this.guild.roles.create(newRole);
-                            this.memberRoles.set(role, newRole)
                         }
                     } else {
                         this.memberRoles.set(role.id, role);
@@ -126,7 +125,7 @@ export class MockDiscord {
         this.guild.roles.create = jest.fn().mockImplementation((options: any) => {
             // console.log("create role called with options: " + options.name + " " + options.color);
             const newRole = {
-                id: `${(options.name as string).length}`, 
+                id: timestampToSnowflake(1420070400000 + this.roles.size), 
                 name: options.name,
                 color: options.color || 0x000000,
                 guild: this.guild,
@@ -195,54 +194,6 @@ export class MockDiscord {
             flags: UserFlags.ActiveDeveloper
         } as unknown as User
         return mockUser;
-    }
-
-    private createMockGuild(client: Client): Guild {
-        return {
-            client: client,
-            id: "guild-id",
-            name: "mock guild",
-            roles: {
-                cache: this.roles,
-                create: jest.fn().mockImplementation((options: any) => {
-                    const newRole = { id: `${options.name}-role-id`, name: options.name };
-                    this.roles.set(options.name, newRole);
-                    return Promise.resolve(newRole);
-                })
-            },
-            members: {
-                cache: new Map(),
-                fetch: jest.fn().mockImplementation((userId: string) => {
-                    return Promise.resolve(this.guildMember);
-                })
-            },
-        } as unknown as Guild
-    }
-
-    private createMockGuildMember(client: Client, user: User, guild: Guild): GuildMember {
-        return {
-            client: client,
-            deaf: false,
-            mute: false,
-            self_mute: false,
-            self_deaf: false,
-            session_id: "session-id",
-            channel_id: "channel-id",
-            nick: "nick",
-            user: user,
-            roles: {
-                cache: this.memberRoles,
-                add: jest.fn().mockImplementation((role) => {
-                    this.memberRoles.set(role.id, role);
-                    return Promise.resolve(this);
-                }),
-                remove: jest.fn().mockImplementation((role) => {
-                    this.memberRoles.delete(role.id);
-                    return Promise.resolve(this);
-                })
-            },
-            guild: guild
-        } as unknown as GuildMember
     }
 
     public createMockInteraction(command: string, mockGuild: any, mockMember: any, repliable: boolean = true, options: {} = {}): CommandInteraction {

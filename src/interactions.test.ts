@@ -229,19 +229,19 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
     });
     
     describe("Testing mood command", () => {
-        test("`mood` command correctly sets 'happy' mood in database and guild, and removes old mood 'mad'", async () => {
+        test("`mood` command correctly sets 'happy' mood in database and guild, and removes old mood 'angry'", async () => {
             const discord = new MockDiscord({ 
                 command: "/mood", 
                 commandOptions: { currentmood: "happy" }
             });
 
-            expect(discord.getRoles().find(role => role.name === "mad")).toBeUndefined();
+            expect(discord.getRoles().find(role => role.name === "angry")).toBeUndefined();
 
-            discord.addRoleToGuild("mad", "000000");
+            discord.addRoleToGuild("angry", "000000");
             discord.addRoleToGuild("happy", "000000");
-            discord.addRoleToMember("mad");
+            discord.addRoleToMember("angry");
 
-            expect(discord.getRoles().find(role => role.name === "mad")).toBeDefined();
+            expect(discord.getRoles().find(role => role.name === "angry")).toBeDefined();
 
             const interaction = discord.getInteraction() as discordJS.ChatInputCommandInteraction;
             
@@ -255,11 +255,10 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
 
             const mockSet = jest.spyOn(firebase, "set");
             const mockGet = jest.spyOn(firebase, "get");
-            const setTimeout = jest.fn();
 
             mockGet.mockResolvedValue({
                 exists: () => true,
-                val: () => ({ mood: `${("mad").length}` })
+                val: () => ({ mood: `${helpers.timestampToSnowflake(1420070400000)}` })
             } as unknown as firebase.DataSnapshot);
 
             jest.useFakeTimers();
@@ -272,14 +271,14 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
             expect(mockSet.mock.calls).toContainEqual([
                 "mock-ref",
                 {
-                    mood: `${("happy").length}`,
+                    mood: `${helpers.timestampToSnowflake(1420070400001)}`,
                     timestamp: 1234567890
                 }
             ]);
 
-            expect(discord.getRoles().find(role => role.name === "mad")).toBeDefined();
+            expect(discord.getRoles().find(role => role.name === "angry")).toBeDefined();
             expect(discord.getMemberRoles().find(role => role.name === "happy")).toBeDefined();
-            expect(discord.getMemberRoles().find(role => role.name === "mad")).toBeUndefined();
+            expect(discord.getMemberRoles().find(role => role.name === "angry")).toBeUndefined();
 
 
         });
@@ -314,7 +313,7 @@ Here's a short list of tones: \`<embed>\` (***TODO***)`;
             expect(mockSet.mock.calls).toContainEqual([
                 "mock-ref",
                 {
-                    mood: `${("excited").length}`,
+                    mood: `${helpers.timestampToSnowflake(1420070400000)}`,
                     timestamp: 1234567890
                 }
             ]);

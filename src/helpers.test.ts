@@ -1,7 +1,7 @@
 import * as discordJS from "discord.js";
 import * as firebase from "firebase/database";
 import { MockDiscord } from "./testing/mocks/mockDiscord";
-import { addRoleToDatabase, getTimestampFromSnowflake, removeRoleFromDatabase } from "./helpers";
+import { addRoleToDatabase, getTimestampFromSnowflake, MINIMUM_MOOD_LIFESPAN, removeRoleFromDatabase, removeRoleIfUnused, timestampToSnowflake } from "./helpers";
 jest.mock("discord.js");
 jest.mock("firebase/database");
 
@@ -30,6 +30,26 @@ describe("Testing helper functions", () => {
             const result = getTimestampFromSnowflake(inputSnowflake);
 
             expect(result).toBe(outputTime);
+        });
+    });
+
+    describe("Testing timestampToSnowflake", () => {
+        test("the Discord Epoch (1420070400000) should return the snowflake '0'", () => {
+            const inputTime = 1420070400000;
+            const outputSnowflake = "0";
+
+            const result = timestampToSnowflake(inputTime);
+
+            expect(result).toBe(outputSnowflake);
+        });
+
+        test("the time 2016-04-30 11:18:25.796 UTC (1462015105796) should return the snowflake '175928847298985984'", () => {
+            const inputTime = 1462015105796;
+            const outputSnowflake = "175928847298985984";
+
+            const result = timestampToSnowflake(inputTime);
+
+            expect(result).toBe(outputSnowflake);
         });
     });
 
@@ -94,4 +114,67 @@ describe("Testing helper functions", () => {
         });
     });
 
+
+    describe("Testing removeRoleIfUnused", () => {
+        test("removeRoleIfUnused should return \"Invalid role specified\" if `role` is null", async () => {
+            const role = null;
+            const expectedResponse = "Invalid role specified";
+
+            const result = await removeRoleIfUnused(role);
+
+            expect(result).toBe(expectedResponse);
+        });
+
+        test("removeRoleIfUnused should return \"role is too young to be removed\" if `role` has not existed for long enough", async () => {
+            const role = { name: "role-name", id: timestampToSnowflake(1462015105796 - (MINIMUM_MOOD_LIFESPAN - 1000)) } as unknown as discordJS.Role;
+            const expectedResponse = "role is too young to be removed";
+
+            const now = jest.spyOn(Date, "now");
+            now.mockReturnValue(1462015105796);
+
+            const result = await removeRoleIfUnused(role);
+
+            expect(result).toBe(expectedResponse);
+        });
+
+        test("removeRoleIfUnused should return \"role removed\" if `role` has no users", async () => {
+            const discord = new MockDiscord({ command: "" });
+
+            discord.addRoleToGuild("role-name", "000000");
+
+            const role = discord.getRoles().find((storedRole) => storedRole.name === "role-name") as unknown as discordJS.Role;
+            const expectedResponse = "role removed";
+
+            const now = jest.spyOn(Date, "now");
+            now.mockReturnValue(1420070400000 + (MINIMUM_MOOD_LIFESPAN + 1000));
+
+            const result = await removeRoleIfUnused(role);
+
+            console.log(Date.now() - getTimestampFromSnowflake(role.id));
+
+            expect(result).toBe(expectedResponse);
+        });
+
+        test("removeRoleIfUnused should return \"role still in use\" if `role` is being used by another user", async () => {
+            const discord = new MockDiscord({ command: "" });
+
+            discord.addRoleToGuild("role-name", "000000");
+
+            const role = discord.getRoles().find((storedRole) => storedRole.name === "role-name") as unknown as discordJS.Role;
+            discord.addRoleToMember(role.id);
+            
+            const expectedResponse = "role still in use";
+
+            const now = jest.spyOn(Date, "now");
+            now.mockReturnValue(1420070400000 + (MINIMUM_MOOD_LIFESPAN + 1000));
+
+            const result = await removeRoleIfUnused(role);
+
+            console.log(Date.now() - getTimestampFromSnowflake(role.id));
+
+            expect(result).toBe(expectedResponse);
+        });
+    });
+
+    
 });

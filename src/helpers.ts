@@ -18,6 +18,18 @@ export function getTimestampFromSnowflake(snowflake: Snowflake): number {
 }
 
 /**
+ * fills the timestamp field of discord's Snowflake structure
+ * 
+ * https://discord.com/developers/docs/reference#snowflakes
+ * 
+ * @param timestamp the unix timestamp of the snowflake
+ * @returns the new snowflake
+ */
+export function timestampToSnowflake(timestamp: number): string {
+    return (BigInt(timestamp - 1420070400000) << 22n).toString();
+}
+
+/**
  * adds a role to the database under a given guild
  * 
  * @param guildId the ID of the server containing the role
