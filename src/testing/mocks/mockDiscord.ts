@@ -24,6 +24,7 @@ import {
   InteractionReplyOptions,
   MessageCollector,
   UserFlags,
+  MessageMentions,
   GuildCreateOptions
 } from "discord.js";
 import { timestampToSnowflake } from "../../helpers";
@@ -260,10 +261,17 @@ export class MockDiscord {
         return {
             client: this.client,
             author: this.user,
+            mentions: this.createMockMentions([]),
             content: "MESSAGE CONTENT",
             createMessageComponentCollector: jest.fn((filter: Function, componentType: ComponentType, time: number | undefined) => {return this.createMockCollector(filter, componentType, time)}),
             ...options
         } as unknown as Message;
+    }
+
+    public createMockMentions(users: User[]): MessageMentions<true> {
+        return {
+            has: jest.fn((data)=>users.includes(data))
+        } as unknown as MessageMentions<true>;
     }
 
     public createMockCollector(filter: Function, componentType: ComponentType, time: number | undefined): InteractionCollector<any> {

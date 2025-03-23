@@ -8,6 +8,7 @@ import {
     EmbedBuilder,
     MessageContextMenuCommandInteraction,
     MessageFlags,
+    PermissionsBitField,
     Role,
     Snowflake,
     StringSelectMenuBuilder,
@@ -15,8 +16,8 @@ import {
 } from "discord.js";
 import { analyzeTone, analyzeMoodColor, emojiRepresentation, explanationOfTone } from "./gptRequests";
 import db from './firebase'; // Import from your firebase.ts file
-import { ref, set, get, child, query, DataSnapshot } from "firebase/database";
-import { addRoleToDatabase, MINIMUM_MOOD_LIFESPAN, removeRoleFromDatabase, removeRoleIfUnused} from "./helpers"
+import { ref, set, get } from "firebase/database";
+import { addRoleToDatabase, MINIMUM_MOOD_LIFESPAN, removeRoleIfUnused } from "./helpers";
 
 //getTones and Clarify rely on toneJSON. Implementing it in firebase would be better
 //import tonesData from "./tones.json" assert { type: "json"};
@@ -513,6 +514,45 @@ export async function requestAnonymousClarification(interaction: MessageContextM
         await interaction.editReply({
             //ephemeral: true,
             content: "There was an error handling the clarification request",
+        });
+    }
+}
+export async function toggleBot(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    if (!(interaction.member?.permissions as PermissionsBitField).has(PermissionsBitField.Flags.ManageGuild)) {
+        interaction.editReply('You need "Manage Server" permission to toggle the bot!');
+        return;
+    }
+
+    const guildId = interaction.guildId!; // Get the guild ID
+    const dbRef = ref(db, `servers/${guildId}/botStatus`);
+
+    try {
+        // Get the current bot status from the Realtime Database
+        const snapshot = await get(dbRef);
+        let newStatus = "active"; // Default to 'active' or lose your mind for a bit
+
+        if (snapshot.exists() && snapshot.val() === "active") {
+            newStatus = snapshot.val() === "active" ? "inactive": "active"; // If active, set to inactive, and the opposite
+        } else {
+            await set(dbRef, "active");
+        }
+
+        // Log the new status for debugging or go insane
+        console.log(`Toggling bot status to: ${newStatus}`);
+
+        // Update the bot status in the Realtime Database
+        await set(dbRef, newStatus);
+
+        // Responds to the user with confirmation
+        interaction.editReply({
+            content: `The bot has been turned ${newStatus === "active" ? "on" : "off"} for this server.`,
+        });
+    } catch (error) {
+        console.error("Error toggling bot status:", error);
+        interaction.editReply({
+            content: "There was an error while toggling the bot's status. Please try again later.",
         });
     }
 }

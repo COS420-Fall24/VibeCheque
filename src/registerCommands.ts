@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { REST, Routes, ApplicationCommandOptionType } from "discord.js";
+import { REST, Routes, ApplicationCommandOptionType, SlashCommandBuilder } from "discord.js";
 
 // define a ts type for discord commands
 declare type command = {
@@ -92,5 +92,10 @@ updateCommands([
     {
         name:"Request Anonymous Clarification",
         type: 3,
+    },
+    {
+        name: "togglebot",
+        description: "Enable or Disable VibeCheque for this server",
+        type: 1,
     }
 ]);
