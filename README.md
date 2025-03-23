@@ -10,12 +10,30 @@ Team Firetruck's COS 420 working repository for the VibeCheque Discord Bot. Also
 
 ## Running
 
-Once the [Installation Process](#installation-process) is complete, run `npm start` to launch the bot. you should see terminal output that looks something like this:
+Once the [Installation Process](#installation-process) is complete, run `npm run registerCommands` to allow users to access the bot's commands. This task is only necessary once, unless a command has been added, removed, or its description/format has been changed. The console should print
 ```
-> vibecheque@0.0.1 start
-> npx tsc --outDir build && node --es-module-specifier-resolution=node build/index.js
+> vibecheque@0.0.2 registerCommands
+> npm run build && node build/registerCommands.js
+
+
+> vibecheque@0.0.2 build
+> npx tsc && npx tsc-alias
 
 refreshing commands
 reloaded commands
+```
+
+To run the bot, simply run `npm start` and the following text should print to console:
+```
+
+> vibecheque@0.0.2 start
+> npm run build && node build/index.js
+
+
+> vibecheque@0.0.2 build
+> npx tsc && npx tsc-alias
+
+(node:1546482) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
 client "ready": Logged in as VibeCheque#4991!
 ```
