@@ -51,6 +51,11 @@ updateCommands([
         type: 1,
     },
     {
+        name: "list-tones",
+        description: "lists a sample of tones and their description",
+        type: 1,
+    },
+    {
         name: "mood",
         description: "Sets the user's current mood",
         options: [
@@ -73,7 +78,15 @@ updateCommands([
         type: 3,
     },
     {
+        name: "Add Tone",
+        type: 3,
+    },
+    {
         name: "Clarify",
+        type: 3,
+    },
+    {
+        name: "In-Depth Clarification",
         type: 3,
     },
     {

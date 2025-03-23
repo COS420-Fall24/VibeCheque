@@ -10,6 +10,8 @@ import {
   MessageCreateOptions,
   Channel,
   REST,
+  ComponentType,
+  InteractionCollector,
   Guild,
   GuildMember,
   CommandInteractionOptionResolver,
@@ -180,7 +182,19 @@ export class MockDiscord {
             client: client,
             id: "channel-id",
             isSendable: jest.fn(() => true),
-            send: jest.fn((s: string | MessagePayload) => this.latestMessage = s)
+            send: jest.fn((s: string | MessagePayload | MessageCreateOptions) => {
+                
+                if (typeof s == "string") {
+                    this.latestMessage = s;
+                    return Promise.resolve(this.createMockMessage({content: s}));
+                } else if (s instanceof MessagePayload) {
+                    this.latestMessage = s;
+                    return Promise.resolve(this.createMockMessage({content: s.makeContent()}));
+                } else {
+                    this.latestMessage = s.content!;
+                    return Promise.resolve(this.createMockMessage(s));
+                }
+            })
         } as unknown as Channel;
     }
 
@@ -212,12 +226,12 @@ export class MockDiscord {
             id: BigInt(1),
             reply: jest.fn((replyOptions: string | MessagePayload | InteractionReplyOptions) => {
                 this.interactionReply = replyOptions;
-                return Promise.resolve();
+                return Promise.resolve(this.createMockMessage(replyOptions as MessageCreateOptions));
             }),
             deferReply: jest.fn(),
             editReply: jest.fn((reply: string | MessagePayload | InteractionEditReplyOptions) => {
                 this.interactionReply = reply;
-                return Promise.resolve();
+                return Promise.resolve(this.createMockMessage(reply as MessageCreateOptions));
             }), 
             isRepliable: jest.fn(() => repliable),
             member: mockMember,
@@ -247,10 +261,20 @@ export class MockDiscord {
             client: this.client,
             author: this.user,
             content: "MESSAGE CONTENT",
+            createMessageComponentCollector: jest.fn((filter: Function, componentType: ComponentType, time: number | undefined) => {return this.createMockCollector(filter, componentType, time)}),
             ...options
         } as unknown as Message;
     }
 
+    public createMockCollector(filter: Function, componentType: ComponentType, time: number | undefined): InteractionCollector<any> {
+        return {
+            filter: filter,
+            componentType: componentType,
+            time: time,
+            on: jest.fn((event: "collect" | "dispose" | "ignore", listener: any) => {/* Do nothing */}),
+        } as unknown as InteractionCollector<any>;
+    }
+    
     public createMockOptions(commandOptions: {}): CommandInteractionOptionResolver{
         return {
             options: commandOptions,

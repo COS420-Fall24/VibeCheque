@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Client, GatewayIntentBits, Events } from "discord.js";
-import { clarify, embed, ping, tone, requestAnonymousClarification, mood } from "./interactions"
+import { clarify, embed, ping, tone, requestAnonymousClarification, mood, inDepthClarification, postemptiveToneAdd, getTones, action } from "./interactions"
 import { cleanupMoods } from "./helpers";
 
 export async function launchBot(): Promise<Client> {
@@ -57,10 +57,14 @@ export async function launchBot(): Promise<Client> {
         if (interaction.isChatInputCommand()) { // slash command
             if (interaction.commandName === "ping") await ping(interaction);
             if (interaction.commandName === "embed") await embed(interaction);
+            if (interaction.commandName === "action") await action(interaction);
+            if (interaction.commandName === "list-tones") await getTones(interaction);
             if (interaction.commandName === "mood") await mood(interaction);
         } else if (interaction.isMessageContextMenuCommand()) { // command from the "apps" menu when clicking on a message
             if (interaction.commandName === "Tone") await tone(interaction);
+            if (interaction.commandName === "Add Tone") await postemptiveToneAdd(interaction);
             if (interaction.commandName === "Clarify") await clarify(interaction);
+            if (interaction.commandName === "In-Depth Clarification") await inDepthClarification(interaction);
             if (interaction.commandName === "Request Anonymous Clarification") await requestAnonymousClarification(interaction);
         } else {
             console.log(interaction);

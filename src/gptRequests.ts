@@ -57,6 +57,105 @@ export async function analyzeTone(userText: string): Promise<string> {
     }
 }
 
+export async function explanationOfTone(userText: string): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        "role": "system",
+        "content": [
+          {
+            "type": "text",
+            "text": `
+              Humans are unpredictable beings. A text message by someone can be interpreted as passive aggressive 
+              or cheerful depending on how the person reads it in their minds. This can lead to misunderstandings. 
+              However, assume you are an expert in understanding human emotions when they send text messages.  
+              I want you to reply to the following texts by giving your best guess about what the person might be 
+              feeling when they wrote it. You are to figure out whether they are sad, mad, happy, neutral, or any 
+              other emotion that the person is conveying. Assume the texter is familiar with the modern day texting conventions.
+              Sometimes, the text will contain "@vibecheque". You are to discard that, and only analyze 
+              the rest of the text.
+              
+              I want you to analyze the text with the intention of clarifying the message to solve the aformentioned issues.
+              For any tone in the message, I want you to format your explanation as following:
+
+              > "text" <tone>
+
+              If the message has fragments with different tone, I want you to use the following format instead:
+
+              > "text fragment" <fragment tone>
+
+              After the tone, I want you to explain how the tone applies to respective fragment in a single sentence.
+              After the analysis, I want you to include some variation of "Hope that clears things up!"
+            `
+          }
+        ]
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": userText
+          }
+        ]
+      }
+    ]
+  });
+
+  if (response.choices[0].message.content !== null){
+    return response.choices[0].message.content;
+  }
+  else{
+    return "Unknown error - can't explain tone at the moment"
+  }
+}
+
+export async function emojiRepresentation(userText: string): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        "role": "system",
+        "content": [
+          {
+            "type": "text",
+            "text": `
+              Humans are unpredictable beings. A text message by someone can be interpreted as passive aggressive 
+              or cheerful depending on how the person reads it in their minds. This can lead to misunderstandings. 
+              However, assume you are an expert in understanding human emotions when they send text messages.  
+              I want you to reply to the following texts by giving your best guess about what the person might be 
+              feeling when they wrote it. You are to figure out whether they are sad, mad, happy, neutral, or any 
+              other emotion that the person is conveying. Assume the texter is familiar with the modern day texting conventions.
+              Sometimes, the text will contain "@vibecheque". You are to discard that, and only analyze 
+              the rest of the text.
+              
+              I want you to tune into the tone behind any messages you receive and reply only with the emoji which best fits.
+              If you are unable to determine an emoji for the message, respond only with this emoji: 🛒 
+            `
+          }
+        ]
+      },
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": userText
+          }
+        ]
+      }
+    ]
+  });
+
+  if (response.choices[0].message.content !== null){
+    return response.choices[0].message.content;
+  }
+  else{
+    return "Unknown error - can't generate emojis at the moment"
+  }
+}
+
 // wrapper for determining the color of a given tone
 // TODO: avoid common background colors
 export async function analyzeMoodColor(mood: string): Promise<string> {
