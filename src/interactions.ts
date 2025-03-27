@@ -556,3 +556,39 @@ export async function toggleBot(interaction: ChatInputCommandInteraction<CacheTy
         });
     }
 }
+
+
+export async function toggleDMs(interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    const userId = interaction.user.id; // Get the user ID
+    const dbRef = ref(db, `users/${userId}/dmsStatus`);
+
+    try {
+        // Get the current DMs status from the Realtime Database for the user
+        const snapshot = await get(dbRef);
+        let newStatus = "enabled"; // Default to 'enabled'
+
+        if (snapshot.exists() && snapshot.val() === "enabled") {
+            newStatus = snapshot.val() === "enabled" ? "disabled" : "enabled"; // Toggle the status
+        } else {
+            await set(dbRef, "enabled");
+        }
+
+        // Log the new status for debugging
+        console.log(`Toggling DMs status for user ${userId} to: ${newStatus}`);
+
+        // Update the DMs status in the Realtime Database for the user
+        await set(dbRef, newStatus);
+
+        // Respond to the user with confirmation
+        interaction.editReply({
+            content: `Your DMs have been ${newStatus === "enabled" ? "enabled" : "disabled"}.`,
+        });
+    } catch (error) {
+        console.error("Error toggling DMs status for user:", error);
+        interaction.editReply({
+            content: "There was an error while toggling your DMs status. Please try again later.",
+        });
+    }
+}
