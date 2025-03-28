@@ -60,7 +60,7 @@ export async function launchBot(): Promise<Client> {
 
             // If DMs are disabled for the user, ignore the interaction and reply with a message
             if (userDMStatus === "disabled") {
-                if (interaction.isCommand()){
+                if (interaction.isCommand() && interaction.commandName !== "toggledms"){
                 return interaction.reply({
                     content: "Sorry, DMs are currently disabled for you.",
                     flags: 64, // Make it ephemeral
