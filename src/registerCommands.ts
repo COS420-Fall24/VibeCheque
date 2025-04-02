@@ -97,5 +97,10 @@ updateCommands([
         name: "togglebot",
         description: "Enable or Disable VibeCheque for this server",
         type: 1,
+    },
+    {
+        name:"toggledms",
+        description: "Enable or Disable DM's from VibeCheque",
+        type:1
     }
 ]);
