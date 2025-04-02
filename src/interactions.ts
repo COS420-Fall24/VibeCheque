@@ -567,12 +567,13 @@ export async function toggleDMs(interaction: ChatInputCommandInteraction<CacheTy
     try {
         // Get the current DMs status from the Realtime Database for the user
         const snapshot = await get(dbRef);
-        let newStatus = "enabled"; // Default to 'enabled'
+        // Default the *new* status to 'disabled' since the default *old status* is 'enabled'
+        let newStatus = "disabled";
 
         if (snapshot.exists() && snapshot.val() === "enabled") {
             newStatus = snapshot.val() === "enabled" ? "disabled" : "enabled"; // Toggle the status
         } else {
-            await set(dbRef, "enabled");
+            await set(dbRef, "disabled");
         }
 
         // Log the new status for debugging
