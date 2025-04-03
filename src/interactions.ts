@@ -584,7 +584,7 @@ export async function toggleDMs(interaction: ChatInputCommandInteraction<CacheTy
 
         // Respond to the user with confirmation
         interaction.editReply({
-            content: `Your DMs have been ${newStatus === "enabled" ? "enabled" : "disabled"}.`,
+            content: `Your DMs have been ${newStatus}.`,
         });
     } catch (error) {
         console.error("Error toggling DMs status for user:", error);
