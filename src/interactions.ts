@@ -570,8 +570,8 @@ export async function toggleDMs(interaction: ChatInputCommandInteraction<CacheTy
         // Default the *new* status to 'disabled' since the default *old status* is 'enabled'
         let newStatus = "disabled";
 
-        if (snapshot.exists() && snapshot.val() === "enabled") {
-            newStatus = snapshot.val() === "enabled" ? "disabled" : "enabled"; // Toggle the status
+        if (snapshot.exists() && snapshot.val() === "disabled") {
+            newStatus = snapshot.val() === "disabled" ? "enabled" : "disabled"; // Toggle the status
         } else {
             await set(dbRef, "disabled");
         }
