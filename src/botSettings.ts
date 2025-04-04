@@ -20,6 +20,25 @@ export async function getServerSetting(guildId: string): Promise<string> {
     }
 }
 
+// Get the current setting for the server (whether the bot is enabled or disabled)
+export async function getUserSetting(userId: string): Promise<string> {
+    const dbRef = ref(database, `users/${userId}/dmsStatus`);
+
+    try {
+        const snapshot = await get(dbRef);
+        if (snapshot.exists()) {
+            return snapshot.val();
+        } else {
+            // Default to "enabled" if no setting is found
+            await set(dbRef, "enabled");
+            return "enabled";
+        }
+    } catch (error) {
+        console.error("Error getting user setting:", error);
+        throw error;
+    }
+}
+
 // Toggle the bot's enabled/disabled setting for the server
 export async function toggleServerSetting(guildId: string): Promise<string> {
     const currentSetting = await getServerSetting(guildId);

@@ -22,6 +22,7 @@ import { addRoleToDatabase, MINIMUM_MOOD_LIFESPAN, removeRoleIfUnused } from "./
 //getTones and Clarify rely on toneJSON. Implementing it in firebase would be better
 //import tonesData from "./tones.json" assert { type: "json"};
 import { readFile } from 'fs/promises';
+import { getUserSetting } from "./botSettings";
 
 //console.log(tonesData.tones);
 
@@ -472,6 +473,17 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
  */
 export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
     await interaction.deferReply({ephemeral: true});
+
+    // Check the user's DM status
+    const userDMStatus = await getUserSetting(interaction.user.id);
+
+    // If DMs are disabled for the user, ignore the interaction and reply with a message
+    if (userDMStatus === "disabled") {
+        interaction.editReply({
+            content: "Sorry, DMs are currently disabled for this user."
+        });
+        return;
+    }
 
     try {
         const targetMessage = interaction.targetMessage;

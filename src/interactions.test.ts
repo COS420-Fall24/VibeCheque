@@ -12,10 +12,12 @@ import { MockDiscord } from "./testing/mocks/mockDiscord";
 import * as gptRequests from "./gptRequests";
 import * as firebase from "firebase/database";
 import * as helpers from "./helpers";
+import * as botSettings from "./botSettings";
 jest.mock("./gptRequests")
 jest.mock("discord.js");
 jest.mock("firebase/database");
 jest.mock("./helpers");
+jest.mock("./botSettings");
 
 describe("Testing application commands", ()=>{
     beforeAll(()=>{
