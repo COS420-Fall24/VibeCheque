@@ -22,6 +22,7 @@ import { addRoleToDatabase, MINIMUM_MOOD_LIFESPAN, removeRoleIfUnused } from "./
 //getTones and Clarify rely on toneJSON. Implementing it in firebase would be better
 //import tonesData from "./tones.json" assert { type: "json"};
 import { readFile } from 'fs/promises';
+import { getUserSetting } from "./botSettings";
 
 //console.log(tonesData.tones);
 
@@ -473,6 +474,17 @@ export async function mood(interaction: ChatInputCommandInteraction<CacheType>):
 export async function requestAnonymousClarification(interaction: MessageContextMenuCommandInteraction<CacheType>): Promise<void>{
     await interaction.deferReply({ephemeral: true});
 
+    // Check the user's DM status
+    const userDMStatus = await getUserSetting(interaction.user.id);
+
+    // If DMs are disabled for the user, ignore the interaction and reply with a message
+    if (userDMStatus === "disabled") {
+        interaction.editReply({
+            content: "Sorry, DMs are currently disabled for this user."
+        });
+        return;
+    }
+
     try {
         const targetMessage = interaction.targetMessage;
 
@@ -570,8 +582,8 @@ export async function toggleDMs(interaction: ChatInputCommandInteraction<CacheTy
         // Default the *new* status to 'disabled' since the default *old status* is 'enabled'
         let newStatus = "disabled";
 
-        if (snapshot.exists() && snapshot.val() === "enabled") {
-            newStatus = snapshot.val() === "enabled" ? "disabled" : "enabled"; // Toggle the status
+        if (snapshot.exists() && snapshot.val() === "disabled") {
+            newStatus = snapshot.val() === "disabled" ? "enabled" : "disabled"; // Toggle the status
         } else {
             await set(dbRef, "disabled");
         }
@@ -584,7 +596,7 @@ export async function toggleDMs(interaction: ChatInputCommandInteraction<CacheTy
 
         // Respond to the user with confirmation
         interaction.editReply({
-            content: `Your DMs have been ${newStatus === "enabled" ? "enabled" : "disabled"}.`,
+            content: `Your DMs have been ${newStatus}.`,
         });
     } catch (error) {
         console.error("Error toggling DMs status for user:", error);

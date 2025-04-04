@@ -6,9 +6,8 @@ import {
     Message,
 } from "discord.js";
 import { clarify, embed, ping, tone, requestAnonymousClarification, mood, toggleBot, inDepthClarification, postemptiveToneAdd, getTones, action, toggleDMs } from "./interactions"
-import { get, ref } from "firebase/database";
-import database from "./firebase";
 import { cleanupMoods } from "./helpers";
+import { getServerSetting, getUserSetting } from "./botSettings";
 
 
 export async function launchBot(): Promise<Client> {
@@ -53,25 +52,8 @@ export async function launchBot(): Promise<Client> {
         const guildId = interaction.guildId!; // Get the guildId for server-wide bot status
 
         try {
-            // Check the user's DM status
-            const userDMRef = ref(database, `users/${userId}/dmsStatus`);
-            const userDMSnapshot = await get(userDMRef);
-            const userDMStatus = userDMSnapshot.exists() ? userDMSnapshot.val() : "enabled"; // Default to 'enabled' if not set
-
-            // If DMs are disabled for the user, ignore the interaction and reply with a message
-            if (userDMStatus === "disabled") {
-                if (interaction.isCommand() && interaction.commandName !== "toggledms"){
-                return interaction.reply({
-                    content: "Sorry, DMs are currently disabled for this user.",
-                    flags: 64, // Make it ephemeral
-                });
-            }
-            }
-
             // Check the bot status for the server
-            const botStatusRef = ref(database, `servers/${guildId}/botStatus`);
-            const botSnapshot = await get(botStatusRef);
-            const botStatus = botSnapshot.exists() ? botSnapshot.val() : "active"; // Default to 'active' if not set
+            const botStatus = await getServerSetting(guildId); // Default to 'active' if not set
 
             // If the bot is inactive, ignore the interaction and reply with a message
             if (botStatus === "inactive") {
